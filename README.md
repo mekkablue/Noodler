@@ -14,7 +14,7 @@ It turns monolines of all selected glyphs into noodles. After installation, it w
 ### Usage Instructions
 
 1. Open a glyph in Edit View, or select any number of glyphs in Font or Edit View.
-2. Use *Filter > Noodler* to insert inflection nodes.
+2. Use *Filter > Noodler* to noodle your lines.
 
 Alternatively, you can also use it as a custom parameter:
 
