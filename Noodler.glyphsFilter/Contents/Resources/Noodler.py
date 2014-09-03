@@ -60,7 +60,7 @@ class Noodler ( GSFilterPlugin ):
 	Replace and add your own class variables.
 	"""
 	noodleThicknessField = objc.IBOutlet()
-	
+	extremesAndInflectionsField = objc.IBOutlet()
 	
 	def init( self ):
 		"""
@@ -129,6 +129,9 @@ class Noodler ( GSFilterPlugin ):
 			self.noodleThickness = self.setDefaultFloatValue( "noodleThickness", 15.0, FontMaster )
 			self.noodleThicknessField.setFloatValue_( self.noodleThickness )
 			
+			self.extremesAndInflections = self.setDefaultBooleanValue( "extremesAndInflections", True, FontMaster )
+			self.extremesAndInflectionsField.setObjectValue_( int( self.extremesAndInflections ) )
+			
 			self.process_( None )
 			return None
 		except Exception as e:
@@ -148,6 +151,19 @@ class Noodler ( GSFilterPlugin ):
 		except Exception as e:
 			self.logToConsole( "setDefaultFloatValue: %s" % str(e) )
 			
+	def setDefaultBooleanValue( self, userDataKey, defaultValue, FontMaster ):
+		"""
+		Returns either the stored or default value for the given userDataKey.
+		Assumes a boolean value. For use in self.setup().
+		"""
+		try:
+			if userDataKey in FontMaster.userData:
+				return bool( FontMaster.userData[userDataKey] )
+			else:
+				return defaultValue
+		except Exception as e:
+			self.logToConsole( "setDefaultBooleanValue: %s" % str(e) )
+			
 	def setDefaultIntegerValue( self, userDataKey, defaultValue, FontMaster ):
 		"""
 		Returns either the stored or default value for the given userDataKey.
@@ -162,7 +178,7 @@ class Noodler ( GSFilterPlugin ):
 			self.logToConsole( "setDefaultIntegerValue: %s" % str(e) )
 	
 	@objc.IBAction
-	def setnoodleThickness_( self, sender ):
+	def setNoodleThickness_( self, sender ):
 		"""
 		Called whenever the corresponding dialog field is changed.
 		Gets the contents of the field and puts it into a class variable.
@@ -176,7 +192,17 @@ class Noodler ( GSFilterPlugin ):
 				self.noodleThickness = noodleThickness
 				self.process_( None )
 		except Exception as e:
-			self.logToConsole( "setnoodleThickness_: %s" % str(e) )
+			self.logToConsole( "setNoodleThickness_: %s" % str(e) )
+	
+	@objc.IBAction
+	def setExtremesAndInflections_( self, sender ):
+		try:
+			extremesAndInflections = bool( sender.objectValue() )
+			if extremesAndInflections != self.extremesAndInflections:
+				self.extremesAndInflections = extremesAndInflections
+				self.process_( None )
+		except Exception as e:
+			self.logToConsole( "setExtremesAndInflections_: %s" % str(e) )
 			
 	def processLayerWithValues( self, Layer, noodleThickness ):
 		"""
@@ -196,6 +222,11 @@ class Noodler ( GSFilterPlugin ):
 					circleCenters.append( firstPoint )
 					lastPoint = thisPath.nodes[len(thisPath.nodes)-1].position
 					circleCenters.append( lastPoint )
+			
+			# Add extremes and inflections:
+			if self.extremesAndInflections:
+				self.addExtremesToPathsInLayer( Layer )
+				self.addInflectionNodesInLayer( Layer )
 			
 			# Expand monoline:
 			NSClassFromString("GlyphsFilterOffsetCurve").offsetLayer_offsetX_offsetY_makeStroke_position_error_shadow_( Layer, noodleRadius, noodleRadius, True, 0.5, None, None )
@@ -218,6 +249,76 @@ class Noodler ( GSFilterPlugin ):
 					
 		except Exception as e:
 			self.logToConsole( "processLayerWithValues: %s" % str(e) )
+	
+	def addExtremesToPathsInLayer( self, thisLayer ):
+		"""Adds extrema to all paths in thisLayer."""
+		try:
+			for thisPath in thisLayer.paths:
+				thisPath.addExtremes_(False)
+		except Exception as e:
+			self.logToConsole( "addExtremesToPathsInLayer: %s" % str(e) )
+	
+	def addInflectionNodesInLayer( self, thisLayer ):
+		"""
+		Adds inflection nodes to all paths in thisLayer.
+		"""
+		try:
+			for ip in range( len( thisLayer.paths )):
+				thisPath = thisLayer.paths[ip]
+				numberOfNodes = len( thisPath.nodes )
+
+				for i in range(numberOfNodes-1, -1, -1):
+					node = thisPath.nodes[i]
+					if node.type == 35: #CURVE
+						nl = [ thisPath.nodes[ (x+numberOfNodes)%numberOfNodes ] for x in range( i-3, i+1 ) ]
+						inflections = self.computeInflection( nl[0], nl[1], nl[2], nl[3] )
+						if len(inflections) == 1:
+							inflectionTime = inflections[0]
+							thisPath.insertNodeWithPathTime_( i + inflectionTime )
+		except Exception as e:
+			self.logToConsole( "addInflectionNodesInLayer: %s" % str(e) )
+
+	def computeInflection( self, p1, p2, p3, p4 ):
+		"""
+		For a given curve p1, p2, p3, p4,
+		t for the first inflection point is calculated and returned.
+		"""
+		try:
+			Result = []
+			ax = p2.x - p1.x
+			ay = p2.y - p1.y
+			bx = p3.x - p2.x - ax
+			by = p3.y - p2.y - ay
+			cx = p4.x - p3.x - ax - bx - bx
+			cy = p4.y - p3.y - ay - by - by
+			c0 = ( ax * by ) - ( ay * bx )
+			c1 = ( ax * cy ) - ( ay * cx )
+			c2 = ( bx * cy ) - ( by * cx )
+	
+			if abs(c2) > 0.00001:
+				discr = ( c1 ** 2 ) - ( 4 * c0 * c2)
+				c2 *= 2
+				if abs(discr) < 0.000001:
+					root = -c1 / c2
+					if (root > 0.001) and (root < 0.99):
+						Result.append(root)
+				elif discr > 0:
+					discr = discr ** 0.5
+					root = ( -c1 - discr ) / c2
+					if (root > 0.001) and (root < 0.99):
+						Result.append(root)
+			
+					root = ( -c1 + discr ) / c2
+					if (root > 0.001) and (root < 0.99):
+						Result.append(root)
+			elif c1 != 0.0:
+				root = - c0 / c1
+				if (root > 0.001) and (root < 0.99):
+					Result.append(root)
+
+			return Result
+		except Exception as e:
+			self.logToConsole( "computeInflection: %s" % str(e) )
 	
 	def drawCircle( self, thisLayer, position, radius ):
 		try:
@@ -280,8 +381,10 @@ class Noodler ( GSFilterPlugin ):
 			noodleThickness = 10.0
 			
 			# Override defaults with actual values from custom parameter:
-			if len( Arguments ) > 1:
+			if len( Arguments ) >= 2:
 				self.noodleThickness = Arguments[1].floatValue()
+			if len( Arguments ) == 3:
+				self.extremesAndInflections = bool( Arguments[2] )
 				
 			# With these values, call your code on every glyph:
 			FontMasterId = Font.fontMasterAtIndex_(0).id

@@ -19,12 +19,12 @@ It turns monolines of all selected glyphs into noodles. After installation, it w
 Alternatively, you can also use it as a custom parameter:
 
 	Property: Filter
-	Value: Noodler;<noodlethickness>
+	Value: Noodler;<noodlethickness>;<extremesAndInflection>
 
-... where `<noodlethickness>` is the thickness of your noodle, e.g.:
+... where `<noodlethickness>` is the thickness of your noodle, and `<extremesAndInflection>` is `1` for yes and `0` for no, e.g.:
 	
 	Property: Filter
-	Value: Noodler;20
+	Value: Noodler;20;1
 
 ### License
 
