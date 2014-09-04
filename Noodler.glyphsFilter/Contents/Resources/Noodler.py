@@ -4,7 +4,7 @@
 import objc
 from Foundation import *
 from AppKit import *
-import sys, os, re
+import sys, os, re, math
 
 MainBundle = NSBundle.mainBundle()
 path = MainBundle.bundlePath() + "/Contents/Scripts"
@@ -204,7 +204,7 @@ class Noodler ( GSFilterPlugin ):
 		except Exception as e:
 			self.logToConsole( "setExtremesAndInflections_: %s" % str(e) )
 			
-	def processLayerWithValues( self, Layer, noodleThickness ):
+	def processLayerWithValues( self, Layer, noodleThickness, extremesAndInflections ):
 		"""
 		This is where your code for processing each layer goes.
 		This method is the one eventually called by either the Custom Parameter or Dialog UI.
@@ -217,14 +217,18 @@ class Noodler ( GSFilterPlugin ):
 			# Collect circle positions:
 			circleCenters = []
 			for thisPath in Layer.paths:
+				numOfNodesInPath = len(thisPath.nodes)
 				if thisPath.closed == False:
 					firstPoint = thisPath.nodes[0].position
-					circleCenters.append( firstPoint )
-					lastPoint = thisPath.nodes[len(thisPath.nodes)-1].position
-					circleCenters.append( lastPoint )
+					secondPoint = thisPath.nodes[1].position
+					circleCenters.append( [firstPoint, secondPoint] )
+
+					lastPoint = thisPath.nodes[ numOfNodesInPath-1 ].position
+					lastButOnePoint = thisPath.nodes[ numOfNodesInPath-2 ].position
+					circleCenters.append( [lastPoint, lastButOnePoint] )
 			
 			# Add extremes and inflections:
-			if self.extremesAndInflections:
+			if extremesAndInflections:
 				self.addExtremesToPathsInLayer( Layer )
 				self.addInflectionNodesInLayer( Layer )
 			
@@ -232,8 +236,14 @@ class Noodler ( GSFilterPlugin ):
 			NSClassFromString("GlyphsFilterOffsetCurve").offsetLayer_offsetX_offsetY_makeStroke_position_error_shadow_( Layer, noodleRadius, noodleRadius, True, 0.5, None, None )
 			
 			# Add circle endings:
-			for thisPosition in circleCenters:
-				self.drawCircle( Layer, thisPosition, noodleRadius )
+			for thisNodePair in circleCenters:
+				circleCenter = thisNodePair[0]
+				circleAtThisPosition = self.drawCircle( circleCenter, noodleRadius )
+				if not self.extremesAndInflections:
+					angle = self.angle( circleCenter, thisNodePair[1] )
+					for thisNode in circleAtThisPosition.nodes:
+						thisNode.position = self.rotate( thisNode.position, angle, circleCenter )
+				Layer.paths.append( circleAtThisPosition )
 				
 			# Remove overlaps:
 			removeOverlapFilter = NSClassFromString("GlyphsFilterRemoveOverlap").alloc().init()
@@ -249,6 +259,24 @@ class Noodler ( GSFilterPlugin ):
 					
 		except Exception as e:
 			self.logToConsole( "processLayerWithValues: %s" % str(e) )
+	
+	def rotate( self, position, angle=180.0, origin=NSPoint(0.0,0.0) ):
+		"""Rotates x/y around x_orig/y_orig by angle and returns result as [x,y]."""
+		x = position.x
+		y = position.y
+		x_orig = origin.x
+		y_orig = origin.y
+		new_angle = ( angle / 180.0 ) * math.pi
+		new_x = ( x - x_orig ) * math.cos( new_angle ) - ( y - y_orig ) * math.sin( new_angle ) + x_orig
+		new_y = ( x - x_orig ) * math.sin( new_angle ) + ( y - y_orig ) * math.cos( new_angle ) + y_orig
+		return NSPoint( new_x, new_y )
+
+	def angle( self, firstPoint, secondPoint ):
+		xDiff = firstPoint.x - secondPoint.x
+		yDiff = firstPoint.y - secondPoint.y
+		tangens = yDiff / xDiff
+		angle = math.atan( tangens ) * 180.0 / math.pi
+		return angle
 	
 	def addExtremesToPathsInLayer( self, thisLayer ):
 		"""Adds extrema to all paths in thisLayer."""
@@ -320,7 +348,7 @@ class Noodler ( GSFilterPlugin ):
 		except Exception as e:
 			self.logToConsole( "computeInflection: %s" % str(e) )
 	
-	def drawCircle( self, thisLayer, position, radius ):
+	def drawCircle( self, position, radius ):
 		try:
 			handle = 0.55229 * radius
 			x = position.x
@@ -332,7 +360,6 @@ class Noodler ( GSFilterPlugin ):
 			
 			# Prepare circle coordinates:
 			myCoordinates = [
-				# [ NSPoint( x, oben ) ],
 				[ NSPoint( x-handle, oben ), NSPoint( links, y+handle ), NSPoint( links, y ) ],
 				[ NSPoint( links, y-handle ), NSPoint( x-handle, unten ), NSPoint( x, unten ) ],
 				[ NSPoint( x+handle, unten ), NSPoint( rechts, y-handle ), NSPoint( rechts, y ) ],
@@ -363,9 +390,7 @@ class Noodler ( GSFilterPlugin ):
 			# Close path:
 			myCircle.closed = True
 			
-			# Add it to the layer:
-			thisLayer.paths.append( myCircle )
-					
+			return myCircle
 		except Exception as e:
 			self.logToConsole( "drawCircle: %s" % str(e) )
 			
@@ -390,7 +415,7 @@ class Noodler ( GSFilterPlugin ):
 			FontMasterId = Font.fontMasterAtIndex_(0).id
 			for Glyph in Font.glyphs:
 				Layer = Glyph.layerForKey_( FontMasterId )
-				self.processLayerWithValues( Layer, self.noodleThickness ) # add your class variables here
+				self.processLayerWithValues( Layer, self.noodleThickness, self.extremesAndInflections ) # add your class variables here
 		except Exception as e:
 			self.logToConsole( "processFont_withArguments_: %s" % str(e) )
 	
@@ -417,7 +442,7 @@ class Noodler ( GSFilterPlugin ):
 							if ShadowLayer.selection().containsObject_( currShadowNode ):
 								Layer.addSelection_( currLayerPath.nodes[j] )
 								
-				self.processLayerWithValues( Layer, self.noodleThickness ) # add your class variables here
+				self.processLayerWithValues( Layer, self.noodleThickness, self.extremesAndInflections ) # add your class variables here
 			Layer.clearSelection()
 		
 			# Safe the values in the FontMaster. But could be saved in UserDefaults, too.
