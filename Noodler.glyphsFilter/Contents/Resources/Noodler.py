@@ -16,6 +16,7 @@ import GlyphsApp
 GSLINE = 1
 GSCURVE = 35
 GSOFFCURVE = 65
+MAGICNUMBER = 4.0 * ( 2.0**0.5 - 1.0 ) / 3.0
 
 """
 	Using Interface Builder (IB):
@@ -350,7 +351,7 @@ class Noodler ( GSFilterPlugin ):
 	
 	def drawCircle( self, position, radius ):
 		try:
-			handle = 0.55229 * radius
+			handle = MAGICNUMBER * radius
 			x = position.x
 			y = position.y
 			links = x-radius
