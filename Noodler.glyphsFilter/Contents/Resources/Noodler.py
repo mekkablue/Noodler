@@ -406,17 +406,32 @@ class Noodler ( GSFilterPlugin ):
 			# Set default values for potential arguments (values), just in case:
 			noodleThickness = 10.0
 			
+			# set glyphList to all glyphs
+			glyphList = Font.glyphs
+			
 			# Override defaults with actual values from custom parameter:
-			if len( Arguments ) >= 2:
-				self.noodleThickness = Arguments[1].floatValue()
-			if len( Arguments ) == 3:
-				self.extremesAndInflections = bool( Arguments[2] )
+			if len( Arguments ) > 1:
+				
+				# change glyphList to include or exclude glyphs
+				if "exclude:" in Arguments[-1]:
+					excludeList = [ n.strip() for n in Arguments.pop(-1).replace("exclude:","").strip().split(",") ]
+					glyphList = [ g for g in glyphList if not g.name in excludeList ]
+				elif "include:" in Arguments[-1]:
+					includeList = [ n.strip() for n in Arguments.pop(-1).replace("include:","").strip().split(",") ]
+					glyphList = [ Font.glyphs[n] for n in includeList ]
+			
+				# Override defaults with actual values from custom parameter:
+				if len( Arguments ) >= 2 and not "clude:" in Arguments[1]:
+					self.noodleThickness = Arguments[1].floatValue()
+					
+				if len( Arguments ) >= 3 and not "clude:" in Arguments[2]:
+					self.extremesAndInflections = bool( Arguments[2] )
 				
 			# With these values, call your code on every glyph:
 			FontMasterId = Font.fontMasterAtIndex_(0).id
-			for Glyph in Font.glyphs:
+			for Glyph in glyphList:
 				Layer = Glyph.layerForKey_( FontMasterId )
-				self.processLayerWithValues( Layer, self.noodleThickness, self.extremesAndInflections ) # add your class variables here
+				self.processLayerWithValues( Layer, self.noodleThickness, self.extremesAndInflections )
 		except Exception as e:
 			self.logToConsole( "processFont_withArguments_: %s" % str(e) )
 	
