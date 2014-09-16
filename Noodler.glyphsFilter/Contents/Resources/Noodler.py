@@ -219,7 +219,7 @@ class Noodler ( GSFilterPlugin ):
 			circleCenters = []
 			for thisPath in Layer.paths:
 				numOfNodesInPath = len(thisPath.nodes)
-				if thisPath.closed == False:
+				if thisPath.closed == False and numOfNodesInPath > 1:
 					firstPoint = thisPath.nodes[0].position
 					secondPoint = thisPath.nodes[1].position
 					circleCenters.append( [firstPoint, secondPoint] )
