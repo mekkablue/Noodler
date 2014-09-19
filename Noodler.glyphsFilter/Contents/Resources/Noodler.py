@@ -12,6 +12,7 @@ if not path in sys.path:
 	sys.path.append( path )
 
 import GlyphsApp
+GLYPHSAPPVERSION = NSBundle.bundleForClass_(GSMenu).infoDictionary().objectForKey_("CFBundleShortVersionString")
 
 GSLINE = 1
 GSCURVE = 35
@@ -204,7 +205,20 @@ class Noodler ( GSFilterPlugin ):
 				self.process_( None )
 		except Exception as e:
 			self.logToConsole( "setExtremesAndInflections_: %s" % str(e) )
+	
+	def isARealEnd( self, thisPoint, thisLayer ):
+		try:
+			thisLayerBezierPath = thisLayer.bezierPath()
+			for xDiff in [-1.0,1.0]:
+				for yDiff in [-1.0,1.0]:
+					testPoint = NSPoint( thisPoint.x + xDiff, thisPoint.y + yDiff )
+					if not thisLayerBezierPath.containsPoint_( testPoint ):
+						return True
+			return False
+		except Exception as e:
+			self.logToConsole( "isARealEnd: %s" % str(e) )
 			
+	
 	def processLayerWithValues( self, Layer, noodleThickness, extremesAndInflections ):
 		"""
 		This is where your code for processing each layer goes.
@@ -234,17 +248,22 @@ class Noodler ( GSFilterPlugin ):
 				self.addInflectionNodesInLayer( Layer )
 			
 			# Expand monoline:
-			NSClassFromString("GlyphsFilterOffsetCurve").offsetLayer_offsetX_offsetY_makeStroke_position_error_shadow_( Layer, noodleRadius, noodleRadius, True, 0.5, None, None )
+			offsetCurveFilter = NSClassFromString("GlyphsFilterOffsetCurve")
+			if GLYPHSAPPVERSION.startswith("1."):
+				offsetCurveFilter.offsetLayer_offsetX_offsetY_makeStroke_position_error_shadow_( Layer, noodleRadius, noodleRadius, True, 0.5, None, None )
+			else:
+				offsetCurveFilter.offsetLayer_offsetX_offsetY_makeStroke_autoStroke_position_error_shadow_( Layer, noodleRadius, noodleRadius, True, False, 0.5, None,None)
 			
 			# Add circle endings:
 			for thisNodePair in circleCenters:
 				circleCenter = thisNodePair[0]
-				circleAtThisPosition = self.drawCircle( circleCenter, noodleRadius )
-				if not self.extremesAndInflections:
-					angle = self.angle( circleCenter, thisNodePair[1] )
-					for thisNode in circleAtThisPosition.nodes:
-						thisNode.position = self.rotate( thisNode.position, angle, circleCenter )
-				Layer.paths.append( circleAtThisPosition )
+				if self.isARealEnd( circleCenter, Layer ):
+					circleAtThisPosition = self.drawCircle( circleCenter, noodleRadius )
+					if not self.extremesAndInflections:
+						angle = self.angle( circleCenter, thisNodePair[1] )
+						for thisNode in circleAtThisPosition.nodes:
+							thisNode.position = self.rotate( thisNode.position, angle, circleCenter )
+					Layer.paths.append( circleAtThisPosition )
 				
 			# Remove overlaps:
 			removeOverlapFilter = NSClassFromString("GlyphsFilterRemoveOverlap").alloc().init()
