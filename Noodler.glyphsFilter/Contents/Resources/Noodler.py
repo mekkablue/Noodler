@@ -128,8 +128,11 @@ class Noodler ( GSFilterPlugin ):
 			# These 2 lines look for saved values (the last ones entered),
 			# 15.0 is a sample default value.
 			# Do this for each value field in your dialog:
-			self.noodleThickness = self.setDefaultFloatValue( "noodleThickness", 15.0, FontMaster )
-			self.noodleThicknessField.setFloatValue_( self.noodleThickness )
+			self.noodleThickness = self.setDefaultListValue( "noodleThickness", [10.0,20.0], FontMaster )
+			stringList = []
+			for thisItem in self.noodleThickness:
+				stringList.append( str(thisItem) )
+			self.noodleThicknessField.setStringValue_( ", ".join(stringList) )
 			
 			self.extremesAndInflections = self.setDefaultBooleanValue( "extremesAndInflections", True, FontMaster )
 			self.extremesAndInflectionsField.setObjectValue_( int( self.extremesAndInflections ) )
@@ -166,6 +169,21 @@ class Noodler ( GSFilterPlugin ):
 		except Exception as e:
 			self.logToConsole( "setDefaultBooleanValue: %s" % str(e) )
 			
+	def setDefaultListValue( self, userDataKey, defaultValue, FontMaster ):
+		"""
+		Returns either the stored or default value for the given userDataKey.
+		Assumes a boolean value. For use in self.setup().
+		"""
+		try:
+			if userDataKey in FontMaster.userData:
+				userDataText = FontMaster.userData[userDataKey]
+				userDataList = self.listOfFloats( userDataText )
+				return userDataList
+			else:
+				return defaultValue
+		except Exception as e:
+			self.logToConsole( "setDefaultListValue: %s" % str(e) )
+			
 	def setDefaultIntegerValue( self, userDataKey, defaultValue, FontMaster ):
 		"""
 		Returns either the stored or default value for the given userDataKey.
@@ -189,9 +207,13 @@ class Noodler ( GSFilterPlugin ):
 		otherwise the dialog action will not be able to connect to it.
 		"""
 		try:
-			noodleThickness = sender.floatValue()
-			if noodleThickness != self.noodleThickness:
-				self.noodleThickness = noodleThickness
+			noodleThicknessString = sender.stringValue()
+			noodleThicknessList = []
+			for thisNoodleThickness in noodleThicknessString.split(","):
+				noodleThicknessList.append( float(thisNoodleThickness) )
+			
+			if noodleThicknessList != self.noodleThickness:
+				self.noodleThickness = noodleThicknessList
 				self.process_( None )
 		except Exception as e:
 			self.logToConsole( "setNoodleThickness_: %s" % str(e) )
@@ -206,9 +228,8 @@ class Noodler ( GSFilterPlugin ):
 		except Exception as e:
 			self.logToConsole( "setExtremesAndInflections_: %s" % str(e) )
 	
-	def isARealEnd( self, thisPoint, thisLayer ):
+	def isARealEnd( self, thisPoint, thisLayerBezierPath ):
 		try:
-			thisLayerBezierPath = thisLayer.bezierPath()
 			for xDiff in [-1.0,1.0]:
 				for yDiff in [-1.0,1.0]:
 					testPoint = NSPoint( thisPoint.x + xDiff, thisPoint.y + yDiff )
@@ -217,16 +238,20 @@ class Noodler ( GSFilterPlugin ):
 			return False
 		except Exception as e:
 			self.logToConsole( "isARealEnd: %s" % str(e) )
-			
 	
-	def processLayerWithValues( self, Layer, noodleThickness, extremesAndInflections ):
-		"""
-		This is where your code for processing each layer goes.
-		This method is the one eventually called by either the Custom Parameter or Dialog UI.
-		Don't call your class variables here, just add a method argument for each Dialog option.
-		"""
+	def expandMonoline( self, Layer, noodleRadius ):
 		try:
-			Font = Layer.parent.parent
+			offsetCurveFilter = NSClassFromString("GlyphsFilterOffsetCurve")
+			if GLYPHSAPPVERSION.startswith("1."):
+				offsetCurveFilter.offsetLayer_offsetX_offsetY_makeStroke_position_error_shadow_( Layer, noodleRadius, noodleRadius, True, 0.5, None, None )
+			else:
+				offsetCurveFilter.offsetLayer_offsetX_offsetY_makeStroke_autoStroke_position_error_shadow_( Layer, noodleRadius, noodleRadius, True, False, 0.5, None,None)
+		except Exception as e:
+			self.logToConsole( "expandMonoline: %s" % str(e) )
+	
+	def noodleLayer( self, thisLayer, noodleThickness, extremesAndInflections, noodleBezierPath ):
+		try:
+			Layer = thisLayer.copy()
 			noodleRadius = noodleThickness * 0.5
 			
 			# Collect circle positions:
@@ -248,16 +273,12 @@ class Noodler ( GSFilterPlugin ):
 				self.addInflectionNodesInLayer( Layer )
 			
 			# Expand monoline:
-			offsetCurveFilter = NSClassFromString("GlyphsFilterOffsetCurve")
-			if GLYPHSAPPVERSION.startswith("1."):
-				offsetCurveFilter.offsetLayer_offsetX_offsetY_makeStroke_position_error_shadow_( Layer, noodleRadius, noodleRadius, True, 0.5, None, None )
-			else:
-				offsetCurveFilter.offsetLayer_offsetX_offsetY_makeStroke_autoStroke_position_error_shadow_( Layer, noodleRadius, noodleRadius, True, False, 0.5, None,None)
+			self.expandMonoline( Layer, noodleRadius )
 			
 			# Add circle endings:
 			for thisNodePair in circleCenters:
 				circleCenter = thisNodePair[0]
-				if self.isARealEnd( circleCenter, Layer ):
+				if self.isARealEnd( circleCenter, noodleBezierPath ):
 					circleAtThisPosition = self.drawCircle( circleCenter, noodleRadius )
 					if not self.extremesAndInflections:
 						angle = self.angle( circleCenter, thisNodePair[1] )
@@ -276,9 +297,58 @@ class Noodler ( GSFilterPlugin ):
 			
 			# Tidy up paths:
 			Layer.cleanUpPaths()
-					
+			
+			return Layer
+		except Exception as e:
+			self.logToConsole( "noodleLayer: %s" % str(e) )
+
+	
+	def processLayerWithValues( self, Layer, noodleThicknesses, extremesAndInflections ):
+		"""
+		This is where your code for processing each layer goes.
+		This method is the one eventually called by either the Custom Parameter or Dialog UI.
+		Don't call your class variables here, just add a method argument for each Dialog option.
+		"""
+		try:
+			Font = Layer.parent.parent
+			
+			# Virtual layer for checking whether a circle should be added:
+			thinnestLayer = Layer.copy()
+			smallestRadius = min(noodleThicknesses) * 0.5
+			self.addExtremesToPathsInLayer( thinnestLayer )
+			self.addInflectionNodesInLayer( thinnestLayer )
+			self.expandMonoline( thinnestLayer, smallestRadius )
+			thisLayerBezierPath = thinnestLayer.bezierPath()
+			
+			# create a noodle for each noodle value:
+			collectionOfNoodledLayers = []
+			for noodleThickness in noodleThicknesses:
+				thisLayer = self.noodleLayer( Layer, noodleThickness, extremesAndInflections, thisLayerBezierPath )
+				collectionOfNoodledLayers.append( thisLayer )
+			
+			# clean out Layer:
+			for pathIndex in range(len(Layer.paths))[::-1]:
+				Layer.removePathAtIndex_( pathIndex )
+			
+			# add all noodles to the path:
+			for noodledLayer in collectionOfNoodledLayers:
+				for noodledPath in noodledLayer.paths:
+					Layer.addPath_( noodledPath )
+			
+			# correct path direction to get the black/white right:
+			Layer.correctPathDirection()
 		except Exception as e:
 			self.logToConsole( "processLayerWithValues: %s" % str(e) )
+	
+	def listOfFloats( self, commaSeparatedString ):
+		try:
+			floatList = []
+			for thisItem in commaSeparatedString.split(","):
+				floatList.append( float( thisItem.strip() ) )
+			return floatList
+		except Exception as e:
+			self.logToConsole( "listOfFloats: %s" % str(e) )
+			
 	
 	def rotate( self, position, angle=180.0, origin=NSPoint(0.0,0.0) ):
 		"""Rotates x/y around x_orig/y_orig by angle and returns result as [x,y]."""
@@ -441,7 +511,7 @@ class Noodler ( GSFilterPlugin ):
 			
 				# Override defaults with actual values from custom parameter:
 				if len( Arguments ) >= 2 and not "clude:" in Arguments[1]:
-					self.noodleThickness = Arguments[1].floatValue()
+					self.noodleThickness = self.listOfFloats(Arguments[1])
 					
 				if len( Arguments ) >= 3 and not "clude:" in Arguments[2]:
 					self.extremesAndInflections = bool( Arguments[2] )
@@ -482,7 +552,10 @@ class Noodler ( GSFilterPlugin ):
 		
 			# Safe the values in the FontMaster. But could be saved in UserDefaults, too.
 			FontMaster = self.valueForKey_( "fontMaster" )
-			FontMaster.userData[ "noodleThickness" ] = NSNumber.numberWithInteger_( self.noodleThickness )
+			noodleList = []
+			for thisNoodleValue in self.noodleThickness:
+				noodleList.append( str(thisNoodleValue) )
+			FontMaster.userData[ "noodleThickness" ] = ", ".join(noodleList) #NSNumber.numberWithInteger_( self.noodleThickness )
 			
 			# call the superclass to trigger the immediate redraw:
 			super( Noodler, self ).process_( sender )

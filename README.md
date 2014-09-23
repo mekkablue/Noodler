@@ -28,6 +28,22 @@ Alternatively, you can also use it as a custom parameter:
 
 At the end of the parameter value, you can hang `exclude:` or `include:`, followed by a comma-separated list of glyph names. This will apply the filter only to the included glyphs, or the glyphs not excluded, respectively.
 
+### Inline Noodling
+
+You can have inline noodles by adding any number of noodle values, separated by commas:
+
+![Inline-noodling a monoline.](Noodler_Inline.png "Noodle result with an inline")
+
+It also works as a custom parameter:
+
+	Property: Filter
+	Value: Noodler;<noodlethickness>,<noodlethickness>,<noodlethickness>;<extremesAndInflection>
+
+E.g.:
+
+	Property: Filter
+	Value: Noodler;10,30;1
+
 ### License
 
 Copyright 2014 Rainer Erich Scheichelbauer (@mekkablue).
