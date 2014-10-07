@@ -178,6 +178,8 @@ class Noodler ( GSFilterPlugin ):
 			if userDataKey in FontMaster.userData:
 				userDataText = FontMaster.userData[userDataKey]
 				userDataList = self.listOfFloats( userDataText )
+				if userDataList == None:
+					userDataList = []
 				return userDataList
 			else:
 				return defaultValue
@@ -310,40 +312,41 @@ class Noodler ( GSFilterPlugin ):
 		Don't call your class variables here, just add a method argument for each Dialog option.
 		"""
 		try:
-			Font = Layer.parent.parent
+			if noodleThicknesses:
+				Font = Layer.parent.parent
 			
-			# Virtual layer for checking whether a circle should be added:
-			thinnestLayer = Layer.copy()
-			smallestRadius = min(noodleThicknesses) * 0.5
-			self.addExtremesToPathsInLayer( thinnestLayer )
-			self.addInflectionNodesInLayer( thinnestLayer )
-			self.expandMonoline( thinnestLayer, smallestRadius )
-			thisLayerBezierPath = thinnestLayer.bezierPath()
+				# Virtual layer for checking whether a circle should be added:
+				thinnestLayer = Layer.copy()
+				smallestRadius = min(noodleThicknesses) * 0.5
+				self.addExtremesToPathsInLayer( thinnestLayer )
+				self.addInflectionNodesInLayer( thinnestLayer )
+				self.expandMonoline( thinnestLayer, smallestRadius )
+				thisLayerBezierPath = thinnestLayer.bezierPath()
 			
-			# create a noodle for each noodle value:
-			collectionOfNoodledLayers = []
-			for noodleThickness in noodleThicknesses:
-				thisLayer = self.noodleLayer( Layer, noodleThickness, extremesAndInflections, thisLayerBezierPath )
-				collectionOfNoodledLayers.append( thisLayer )
+				# create a noodle for each noodle value:
+				collectionOfNoodledLayers = []
+				for noodleThickness in noodleThicknesses:
+					thisLayer = self.noodleLayer( Layer, noodleThickness, extremesAndInflections, thisLayerBezierPath )
+					collectionOfNoodledLayers.append( thisLayer )
 			
-			# clean out Layer:
-			for pathIndex in range(len(Layer.paths))[::-1]:
-				Layer.removePathAtIndex_( pathIndex )
+				# clean out Layer:
+				for pathIndex in range(len(Layer.paths))[::-1]:
+					Layer.removePathAtIndex_( pathIndex )
 			
-			# add all noodles to the path:
-			for noodledLayer in collectionOfNoodledLayers:
-				for noodledPath in noodledLayer.paths:
-					Layer.addPath_( noodledPath )
+				# add all noodles to the path:
+				for noodledLayer in collectionOfNoodledLayers:
+					for noodledPath in noodledLayer.paths:
+						Layer.addPath_( noodledPath )
 			
-			# correct path direction to get the black/white right:
-			Layer.correctPathDirection()
+				# correct path direction to get the black/white right:
+				Layer.correctPathDirection()
 		except Exception as e:
 			self.logToConsole( "processLayerWithValues: %s" % str(e) )
 	
 	def listOfFloats( self, commaSeparatedString ):
 		try:
 			floatList = []
-			for thisItem in commaSeparatedString.split(","):
+			for thisItem in str(commaSeparatedString).split(","):
 				floatList.append( float( thisItem.strip() ) )
 			return floatList
 		except Exception as e:
