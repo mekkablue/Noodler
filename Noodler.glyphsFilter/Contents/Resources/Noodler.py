@@ -314,7 +314,7 @@ class Noodler ( GSFilterPlugin ):
 		try:
 			if noodleThicknesses:
 				Font = Layer.parent.parent
-			
+				
 				# Virtual layer for checking whether a circle should be added:
 				thinnestLayer = Layer.copy()
 				smallestRadius = min(noodleThicknesses) * 0.5
@@ -322,22 +322,22 @@ class Noodler ( GSFilterPlugin ):
 				self.addInflectionNodesInLayer( thinnestLayer )
 				self.expandMonoline( thinnestLayer, smallestRadius )
 				thisLayerBezierPath = thinnestLayer.bezierPath()
-			
+				
 				# create a noodle for each noodle value:
 				collectionOfNoodledLayers = []
 				for noodleThickness in noodleThicknesses:
 					thisLayer = self.noodleLayer( Layer, noodleThickness, extremesAndInflections, thisLayerBezierPath )
 					collectionOfNoodledLayers.append( thisLayer )
-			
+
 				# clean out Layer:
 				for pathIndex in range(len(Layer.paths))[::-1]:
 					Layer.removePathAtIndex_( pathIndex )
-			
+
 				# add all noodles to the path:
 				for noodledLayer in collectionOfNoodledLayers:
 					for noodledPath in noodledLayer.paths:
 						Layer.addPath_( noodledPath )
-			
+
 				# correct path direction to get the black/white right:
 				Layer.correctPathDirection()
 		except Exception as e:
@@ -518,6 +518,8 @@ class Noodler ( GSFilterPlugin ):
 					
 				if len( Arguments ) >= 3 and not "clude:" in Arguments[2]:
 					self.extremesAndInflections = bool( Arguments[2] )
+				else:
+					self.extremesAndInflections = True
 				
 			# With these values, call your code on every glyph:
 			FontMasterId = Font.fontMasterAtIndex_(0).id
