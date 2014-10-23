@@ -44,6 +44,10 @@ E.g.:
 	Property: Filter
 	Value: Noodler;10,30;1
 
+### Requirements
+
+The plugin needs Glyphs 1.4.3 or higher, running on OS X 10.7 or later. I can only test it in current OS versions, and I assume it will not work in versions of Mac OS X older than 10.7.
+
 ### License
 
 Copyright 2014 Rainer Erich Scheichelbauer (@mekkablue).
