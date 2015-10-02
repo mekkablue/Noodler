@@ -253,49 +253,75 @@ class Noodler ( GSFilterPlugin ):
 	
 	def noodleLayer( self, thisLayer, noodleThickness, extremesAndInflections, noodleBezierPath ):
 		try:
-			Layer = thisLayer.copy()
-			noodleRadius = noodleThickness * 0.5
-			
-			# Collect circle positions:
-			circleCenters = []
-			for thisPath in Layer.paths:
-				numOfNodesInPath = len(thisPath.nodes)
-				if thisPath.closed == False and numOfNodesInPath > 1:
-					firstPoint = thisPath.nodes[0].position
-					secondPoint = thisPath.nodes[1].position
-					circleCenters.append( [firstPoint, secondPoint] )
+			# Catch a crash:
+			if noodleThickness == 0.0:
+				noodleThickness = 1.0
 
-					lastPoint = thisPath.nodes[ numOfNodesInPath-1 ].position
-					lastButOnePoint = thisPath.nodes[ numOfNodesInPath-2 ].position
-					circleCenters.append( [lastPoint, lastButOnePoint] )
+			Layer = thisLayer.copy()
 			
-			# Add extremes and inflections:
-			if extremesAndInflections:
-				self.addExtremesToPathsInLayer( Layer )
-				self.addInflectionNodesInLayer( Layer )
-			
-			# Expand monoline:
-			self.expandMonoline( Layer, noodleRadius )
-			
-			# Add circle endings:
-			for thisNodePair in circleCenters:
-				circleCenter = thisNodePair[0]
-				if self.isARealEnd( circleCenter, noodleBezierPath ):
-					circleAtThisPosition = self.drawCircle( circleCenter, noodleRadius )
-					if not self.extremesAndInflections:
-						angle = self.angle( circleCenter, thisNodePair[1] )
-						for thisNode in circleAtThisPosition.nodes:
-							thisNode.position = self.rotate( thisNode.position, angle, circleCenter )
-					Layer.paths.append( circleAtThisPosition )
+			if Layer.paths:
+				noodleRadius = noodleThickness * 0.5
 				
-			# Remove overlaps:
-			removeOverlapFilter = NSClassFromString("GlyphsFilterRemoveOverlap").alloc().init()
-			removeOverlapFilter.runFilterWithLayer_error_( Layer, None )
+				self.logToConsole("1")
+				# Collect circle positions:
+				circleCenters = []
+				for thisPath in Layer.paths:
+					numOfNodesInPath = len(thisPath.nodes)
+					if thisPath.closed == False and numOfNodesInPath > 1:
+						firstPoint = thisPath.nodes[0].position
+						secondPoint = thisPath.nodes[1].position
+						circleCenters.append( [firstPoint, secondPoint] )
+
+						lastPoint = thisPath.nodes[ numOfNodesInPath-1 ].position
+						lastButOnePoint = thisPath.nodes[ numOfNodesInPath-2 ].position
+						circleCenters.append( [lastPoint, lastButOnePoint] )
+
+				self.logToConsole("2")
+
+				# Add extremes and inflections:
+				if extremesAndInflections:
+					self.addExtremesToPathsInLayer( Layer )
+					self.addInflectionNodesInLayer( Layer )
+					
+				self.logToConsole("3")
 			
-			# Round Corners:
-			roundCornerFilter = NSClassFromString("GlyphsFilterRoundCorner").alloc().init()
-			roundCornerFilter.setRadius_( noodleRadius )
-			roundCornerFilter.roundLayer_( Layer )
+				# Expand monoline:
+				self.expandMonoline( Layer, noodleRadius )
+
+				self.logToConsole("4")
+
+				# Add circle endings:
+				for thisNodePair in circleCenters:
+					circleCenter = thisNodePair[0]
+					if self.isARealEnd( circleCenter, noodleBezierPath ):
+						circleAtThisPosition = self.drawCircle( circleCenter, noodleRadius )
+						if not self.extremesAndInflections:
+							angle = self.angle( circleCenter, thisNodePair[1] )
+							for thisNode in circleAtThisPosition.nodes:
+								thisNode.position = self.rotate( thisNode.position, angle, circleCenter )
+						Layer.paths.append( circleAtThisPosition )
+
+
+				self.logToConsole("5")
+
+				# Remove overlaps:
+				removeOverlapFilter = NSClassFromString("GlyphsFilterRemoveOverlap").alloc().init()
+				#removeOverlapFilter.runFilterWithLayer_error_( Layer, None )
+			
+				removeOverlapFilter.removeOverlapFromLayer_gridSize_checkSelection_error_( Layer, 0.0, False, None )
+
+			
+				# Round Corners:
+				#roundCornerFilter = NSClassFromString("GlyphsFilterRoundCorner").alloc().init()
+				#roundCornerFilter.setRadius_( noodleRadius )
+				#roundCornerFilter.roundLayer_( Layer )
+
+				self.logToConsole("6")
+
+				roundCornerFilter = NSClassFromString("GlyphsFilterRoundCorner")
+				roundCornerFilter.roundLayer_radius_checkSelection_visualCorrect_grid_( Layer, noodleRadius, False, True, False )
+			
+				self.logToConsole("7")
 			
 			# Tidy up paths:
 			Layer.cleanUpPaths()
@@ -326,8 +352,9 @@ class Noodler ( GSFilterPlugin ):
 				# create a noodle for each noodle value:
 				collectionOfNoodledLayers = []
 				for noodleThickness in noodleThicknesses:
-					thisLayer = self.noodleLayer( Layer, noodleThickness, extremesAndInflections, thisLayerBezierPath )
-					collectionOfNoodledLayers.append( thisLayer )
+					if float(noodleThickness) != 0.0:
+						thisLayer = self.noodleLayer( Layer, noodleThickness, extremesAndInflections, thisLayerBezierPath )
+						collectionOfNoodledLayers.append( thisLayer )
 
 				# clean out Layer:
 				for pathIndex in range(len(Layer.paths))[::-1]:
@@ -342,6 +369,16 @@ class Noodler ( GSFilterPlugin ):
 				Layer.correctPathDirection()
 		except Exception as e:
 			self.logToConsole( "processLayerWithValues: %s" % str(e) )
+	
+	def customParameterString( self ):
+		"""Return the custom parameter string for the gear menu."""
+		try:
+			listOfNoodles = ["%.1f" % x for x in list(self.noodleThickness)]
+			stringOfNoodleThicknesses = ", ".join(listOfNoodles)
+			thisParameter = "Noodler;%s;%i" % ( stringOfNoodleThicknesses, int(self.extremesAndInflections) )
+			return thisParameter
+		except Exception as e:
+			self.logToConsole( "customParameterString: %s" % str(e) )
 	
 	def listOfFloats( self, commaSeparatedString ):
 		try:
@@ -543,14 +580,26 @@ class Noodler ( GSFilterPlugin ):
 				Layer = Layers[k]
 				Layer.setPaths_( NSMutableArray.alloc().initWithArray_copyItems_( ShadowLayer.pyobjc_instanceMethods.paths(), True ) )
 				Layer.setSelection_( NSMutableArray.array() )
-				if len(ShadowLayer.selection()) > 0 and checkSelection:
-					for i in range(len( ShadowLayer.paths )):
-						currShadowPath = ShadowLayer.paths[i]
-						currLayerPath = Layer.paths[i]
-						for j in range(len(currShadowPath.nodes)):
-							currShadowNode = currShadowPath.nodes[j]
-							if ShadowLayer.selection().containsObject_( currShadowNode ):
-								Layer.addSelection_( currLayerPath.nodes[j] )
+				try:
+					# Glyphs 2.2
+					if len(ShadowLayer.selection) > 0 and checkSelection:
+						for i in range(len( ShadowLayer.paths )):
+							currShadowPath = ShadowLayer.paths[i]
+							currLayerPath = Layer.paths[i]
+							for j in range(len(currShadowPath.nodes)):
+								currShadowNode = currShadowPath.nodes[j]
+								if ShadowLayer.selection.containsObject_( currShadowNode ):
+									Layer.addSelection_( currLayerPath.nodes[j] )
+				except:
+					# Glyphs 2.1 and earlier:
+					if len(ShadowLayer.selection()) > 0 and checkSelection:
+						for i in range(len( ShadowLayer.paths )):
+							currShadowPath = ShadowLayer.paths[i]
+							currLayerPath = Layer.paths[i]
+							for j in range(len(currShadowPath.nodes)):
+								currShadowNode = currShadowPath.nodes[j]
+								if ShadowLayer.selection().containsObject_( currShadowNode ):
+									Layer.addSelection_( currLayerPath.nodes[j] )
 								
 				self.processLayerWithValues( Layer, self.noodleThickness, self.extremesAndInflections ) # add your class variables here
 			Layer.clearSelection()
