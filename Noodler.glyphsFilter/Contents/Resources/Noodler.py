@@ -588,7 +588,7 @@ class Noodler ( GSFilterPlugin ):
 							currLayerPath = Layer.paths[i]
 							for j in range(len(currShadowPath.nodes)):
 								currShadowNode = currShadowPath.nodes[j]
-								if ShadowLayer.selection.containsObject_( currShadowNode ):
+								if currShadowNode in ShadowLayer.selection:
 									Layer.addSelection_( currLayerPath.nodes[j] )
 				except:
 					# Glyphs 2.1 and earlier:
