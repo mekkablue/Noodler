@@ -19,57 +19,12 @@ GSCURVE = 35
 GSOFFCURVE = 65
 MAGICNUMBER = 4.0 * ( 2.0**0.5 - 1.0 ) / 3.0
 
-"""
-	Using Interface Builder (IB):
-	
-	Your code communicates with the UI through
-	- IBOutlets (.py->GUI): values available to a UI element (e.g. a string for a text field)
-	- IBActions (GUI->.py): methods in this class, triggered by buttons or other UI elements
-	
-	In order to make the Interface Builder items work, follow these steps:
-	1. Make sure you have your IBOutlets (other than _theView)
-	   defined as class variables at the beginning of this controller class.
-	2. Immediately *before* the def statement of a method that is supposed to be triggered
-	   by a UI action (e.g., setMyValue_() triggered by the My Value field), put:
-		@objc.IBAction
-	   Make sure the method name ends with an underscore, e.g. setValue_(),
-	   otherwise the action will not be able to send its value to the class method.
-	3. Open the .xib file in XCode, and add and arrange interface elements.
-	4. Add this .py file via File > Add Files..., Xcode will recognize IBOutlets and IBACtions
-	5. In the left sidebar, choose Placeholders > File's Owner,
-	   in the right sidebar, open the Identity inspector (3rd icon),
-	   and put the name of this controller class in the Custom Class > Class field
-	6. IBOutlets: Ctrl-drag from the File's Owner to a UI element (e.g. text field),
-	   and choose which outlet shall be linked to the UI element
-	7. IBActions: Ctrl-drag from a UI element (e.g. button) to the File’s Owner in the left sidebar,
-	   and choose the class method the UI element is supposed to trigger.
-	   If you want a stepping field (change the value with up/downarrow),
-	   then select the Entry Field, and set Identity Inspector > Custom Class to:
-		GSSteppingTextField
-	   ... and Attributes Inspector (top right, 4th icon) > Control > State to:
-		Continuous
-	8. Compile the .xib file to a .nib file with this Terminal command:
-		ibtool xxx.xib --compile xxx.nib
-	   (Replace xxx by the name of your xib/nib)
-	   Please note: Every time the .xib is changed, it has to be recompiled to a .nib.
-	   Check Console.app for error messages to see if everything went right.
-"""
-
 class Noodler ( GSFilterPlugin ):
-	"""
-	All 'myValue' and 'myValueField' references are just an example.
-	They correspond to the 'My Value' field in the .xib file.
-	Replace and add your own class variables.
-	"""
 	noodleThicknessField = objc.IBOutlet()
 	extremesAndInflectionsField = objc.IBOutlet()
+	removeOverlapField = objc.IBOutlet()
 	
 	def init( self ):
-		"""
-		Do all initializing here.
-		This is a good place to call random.seed() if you want to use randomisation.
-		In that case, don't forget to import random at the top of this file.
-		"""
 		try:
 			NSBundle.loadNibNamed_owner_( "NoodlerDialog", self )
 			return self
@@ -125,17 +80,17 @@ class Noodler ( GSFilterPlugin ):
 			super( Noodler, self ).setup()
 			FontMaster = self.valueForKey_( "fontMaster" )
 			
-			# These 2 lines look for saved values (the last ones entered),
-			# 15.0 is a sample default value.
-			# Do this for each value field in your dialog:
 			self.noodleThickness = self.setDefaultListValue( "noodleThickness", [10.0,20.0], FontMaster )
 			stringList = []
 			for thisItem in self.noodleThickness:
 				stringList.append( str(thisItem) )
 			self.noodleThicknessField.setStringValue_( ", ".join(stringList) )
 			
-			self.extremesAndInflections = self.setDefaultBooleanValue( "extremesAndInflections", True, FontMaster )
+			self.extremesAndInflections = self.setDefaultBooleanValue( "noodleExtremesAndInflections", True, FontMaster )
 			self.extremesAndInflectionsField.setObjectValue_( int( self.extremesAndInflections ) )
+
+			self.removeOverlap = self.setDefaultBooleanValue( "noodleRemoveOverlap", True, FontMaster )
+			self.removeOverlapField.setObjectValue_( int( self.removeOverlap ) )
 			
 			self.process_( None )
 			return None
@@ -230,6 +185,16 @@ class Noodler ( GSFilterPlugin ):
 		except Exception as e:
 			self.logToConsole( "setExtremesAndInflections_: %s" % str(e) )
 	
+	@objc.IBAction
+	def setRemoveOverlap_( self, sender ):
+		try:
+			removeOverlap = bool( sender.objectValue() )
+			if removeOverlap != self.removeOverlap:
+				self.removeOverlap = removeOverlap
+				self.process_( None )
+		except Exception as e:
+			self.logToConsole( "setRemoveOverlap_: %s" % str(e) )
+	
 	def isARealEnd( self, thisPoint, thisLayerBezierPath ):
 		try:
 			for xDiff in [-1.0,1.0]:
@@ -251,7 +216,7 @@ class Noodler ( GSFilterPlugin ):
 		except Exception as e:
 			self.logToConsole( "expandMonoline: %s" % str(e) )
 	
-	def noodleLayer( self, thisLayer, noodleThickness, extremesAndInflections, noodleBezierPath ):
+	def noodleLayer( self, thisLayer, noodleThickness, extremesAndInflections, removeOverlap, noodleBezierPath ):
 		try:
 			# Catch a crash:
 			if noodleThickness == 0.0:
@@ -262,7 +227,6 @@ class Noodler ( GSFilterPlugin ):
 			if Layer.paths:
 				noodleRadius = noodleThickness * 0.5
 				
-				self.logToConsole("1")
 				# Collect circle positions:
 				circleCenters = []
 				for thisPath in Layer.paths:
@@ -276,19 +240,13 @@ class Noodler ( GSFilterPlugin ):
 						lastButOnePoint = thisPath.nodes[ numOfNodesInPath-2 ].position
 						circleCenters.append( [lastPoint, lastButOnePoint] )
 
-				self.logToConsole("2")
-
 				# Add extremes and inflections:
 				if extremesAndInflections:
 					self.addExtremesToPathsInLayer( Layer )
 					self.addInflectionNodesInLayer( Layer )
 					
-				self.logToConsole("3")
-			
 				# Expand monoline:
 				self.expandMonoline( Layer, noodleRadius )
-
-				self.logToConsole("4")
 
 				# Add circle endings:
 				for thisNodePair in circleCenters:
@@ -301,27 +259,14 @@ class Noodler ( GSFilterPlugin ):
 								thisNode.position = self.rotate( thisNode.position, angle, circleCenter )
 						Layer.paths.append( circleAtThisPosition )
 
-
-				self.logToConsole("5")
-
 				# Remove overlaps:
-				removeOverlapFilter = NSClassFromString("GlyphsFilterRemoveOverlap").alloc().init()
-				#removeOverlapFilter.runFilterWithLayer_error_( Layer, None )
-			
-				removeOverlapFilter.removeOverlapFromLayer_gridSize_checkSelection_error_( Layer, 0.0, False, None )
+				if removeOverlap != False:
+					removeOverlapFilter = NSClassFromString("GlyphsFilterRemoveOverlap").alloc().init()
+					removeOverlapFilter.removeOverlapFromLayer_gridSize_checkSelection_error_( Layer, 0.0, False, None )
 
-			
 				# Round Corners:
-				#roundCornerFilter = NSClassFromString("GlyphsFilterRoundCorner").alloc().init()
-				#roundCornerFilter.setRadius_( noodleRadius )
-				#roundCornerFilter.roundLayer_( Layer )
-
-				self.logToConsole("6")
-
 				roundCornerFilter = NSClassFromString("GlyphsFilterRoundCorner")
 				roundCornerFilter.roundLayer_radius_checkSelection_visualCorrect_grid_( Layer, noodleRadius, False, True, False )
-			
-				self.logToConsole("7")
 			
 			# Tidy up paths:
 			Layer.cleanUpPaths()
@@ -331,7 +276,7 @@ class Noodler ( GSFilterPlugin ):
 			self.logToConsole( "noodleLayer: %s" % str(e) )
 
 	
-	def processLayerWithValues( self, Layer, noodleThicknesses, extremesAndInflections ):
+	def processLayerWithValues( self, Layer, noodleThicknesses, extremesAndInflections, removeOverlap ):
 		"""
 		This is where your code for processing each layer goes.
 		This method is the one eventually called by either the Custom Parameter or Dialog UI.
@@ -353,7 +298,7 @@ class Noodler ( GSFilterPlugin ):
 				collectionOfNoodledLayers = []
 				for noodleThickness in noodleThicknesses:
 					if float(noodleThickness) != 0.0:
-						thisLayer = self.noodleLayer( Layer, noodleThickness, extremesAndInflections, thisLayerBezierPath )
+						thisLayer = self.noodleLayer( Layer, noodleThickness, extremesAndInflections, removeOverlap, thisLayerBezierPath )
 						collectionOfNoodledLayers.append( thisLayer )
 
 				# clean out Layer:
@@ -375,7 +320,7 @@ class Noodler ( GSFilterPlugin ):
 		try:
 			listOfNoodles = ["%.1f" % x for x in list(self.noodleThickness)]
 			stringOfNoodleThicknesses = ", ".join(listOfNoodles)
-			thisParameter = "Noodler;%s;%i" % ( stringOfNoodleThicknesses, int(self.extremesAndInflections) )
+			thisParameter = "Noodler; %s; %i; %i" % ( stringOfNoodleThicknesses.replace(" ",""), int(self.extremesAndInflections), int(self.removeOverlap) )
 			return thisParameter
 		except Exception as e:
 			self.logToConsole( "customParameterString: %s" % str(e) )
@@ -388,7 +333,6 @@ class Noodler ( GSFilterPlugin ):
 			return floatList
 		except Exception as e:
 			self.logToConsole( "listOfFloats: %s" % str(e) )
-			
 	
 	def rotate( self, position, angle=180.0, origin=NSPoint(0.0,0.0) ):
 		"""Rotates x/y around x_orig/y_orig by angle and returns result as [x,y]."""
@@ -523,7 +467,6 @@ class Noodler ( GSFilterPlugin ):
 			return myCircle
 		except Exception as e:
 			self.logToConsole( "drawCircle: %s" % str(e) )
-			
 
 	def processFont_withArguments_( self, Font, Arguments ):
 		"""
@@ -557,14 +500,30 @@ class Noodler ( GSFilterPlugin ):
 					self.extremesAndInflections = bool( Arguments[2] )
 				else:
 					self.extremesAndInflections = True
-				
+
+				if len( Arguments ) >= 4 and not "clude:" in Arguments[3]:
+					self.removeOverlap = bool( Arguments[3] )
+				else:
+					self.removeOverlap = True
+
 			# With these values, call your code on every glyph:
 			FontMasterId = Font.fontMasterAtIndex_(0).id
 			for Glyph in glyphList:
 				Layer = Glyph.layerForKey_( FontMasterId )
-				self.processLayerWithValues( Layer, self.noodleThickness, self.extremesAndInflections )
+				self.processLayerWithValues( Layer, self.noodleThickness, self.extremesAndInflections, self.removeOverlap )
 		except Exception as e:
 			self.logToConsole( "processFont_withArguments_: %s" % str(e) )
+	
+	def selectionOnLayer( self, thisLayer ):
+		"""Compatibility mathod for app versions prior to 2.2."""
+		try:
+			try:
+				return thisLayer.selection()
+			except:
+				return thisLayer.selection
+		except Exception as e:
+			self.logToConsole( "selectionOnLayer: %s" % str(e) )
+			
 	
 	def process_( self, sender ):
 		"""
@@ -580,28 +539,18 @@ class Noodler ( GSFilterPlugin ):
 				Layer = Layers[k]
 				Layer.setPaths_( NSMutableArray.alloc().initWithArray_copyItems_( ShadowLayer.pyobjc_instanceMethods.paths(), True ) )
 				Layer.setSelection_( NSMutableArray.array() )
-				try:
-					# Glyphs 2.2
-					if len(ShadowLayer.selection) > 0 and checkSelection:
-						for i in range(len( ShadowLayer.paths )):
-							currShadowPath = ShadowLayer.paths[i]
-							currLayerPath = Layer.paths[i]
-							for j in range(len(currShadowPath.nodes)):
-								currShadowNode = currShadowPath.nodes[j]
-								if currShadowNode in ShadowLayer.selection:
-									Layer.addSelection_( currLayerPath.nodes[j] )
-				except:
-					# Glyphs 2.1 and earlier:
-					if len(ShadowLayer.selection()) > 0 and checkSelection:
-						for i in range(len( ShadowLayer.paths )):
-							currShadowPath = ShadowLayer.paths[i]
-							currLayerPath = Layer.paths[i]
-							for j in range(len(currShadowPath.nodes)):
-								currShadowNode = currShadowPath.nodes[j]
-								if ShadowLayer.selection().containsObject_( currShadowNode ):
-									Layer.addSelection_( currLayerPath.nodes[j] )
+				
+				shadowLayerSelection = self.selectionOnLayer(ShadowLayer)
+				if len(shadowLayerSelection) > 0 and checkSelection:
+					for i in range(len( ShadowLayer.paths )):
+						currShadowPath = ShadowLayer.paths[i]
+						currLayerPath = Layer.paths[i]
+						for j in range(len(currShadowPath.nodes)):
+							currShadowNode = currShadowPath.nodes[j]
+							if currShadowNode in self.selectionOnLayer(ShadowLayer):
+								Layer.addSelection_( currLayerPath.nodes[j] )
 								
-				self.processLayerWithValues( Layer, self.noodleThickness, self.extremesAndInflections ) # add your class variables here
+				self.processLayerWithValues( Layer, self.noodleThickness, self.extremesAndInflections, self.removeOverlap ) # add your class variables here
 			Layer.clearSelection()
 		
 			# Safe the values in the FontMaster. But could be saved in UserDefaults, too.
@@ -609,13 +558,14 @@ class Noodler ( GSFilterPlugin ):
 			noodleList = []
 			for thisNoodleValue in self.noodleThickness:
 				noodleList.append( str(thisNoodleValue) )
-			FontMaster.userData[ "noodleThickness" ] = ", ".join(noodleList) #NSNumber.numberWithInteger_( self.noodleThickness )
+			FontMaster.userData[ "noodleThickness" ] = ", ".join(noodleList)
+			FontMaster.userData[ "noodleExtremesAndInflections" ] = int(self.extremesAndInflections)
+			FontMaster.userData[ "noodleRemoveOverlap" ] = int(self.removeOverlap)
 			
 			# call the superclass to trigger the immediate redraw:
 			super( Noodler, self ).process_( sender )
 		except Exception as e:
 			self.logToConsole( "process_: %s" % str(e) )
-			
 	
 	def logToConsole( self, message ):
 		"""

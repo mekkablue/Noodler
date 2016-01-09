@@ -9,7 +9,7 @@ It turns monolines of all selected glyphs into noodles. After installation, it w
 
 1. Download the complete ZIP file and unpack it, or clone the repository.
 2. Double click the .glyphsFilter file. Confirm the dialog that appears in Glyphs.
-3. Restart Glyphs
+3. Restart Glyphs.
 
 ### Usage Instructions
 
@@ -19,12 +19,12 @@ It turns monolines of all selected glyphs into noodles. After installation, it w
 Alternatively, you can also use it as a custom parameter:
 
 	Property: Filter
-	Value: Noodler;<noodlethickness>;<extremesAndInflection>
+	Value: Noodler;<noodlethickness>;<extremesAndInflection>;<removeOverlap>
 
-... where `<noodlethickness>` is the thickness of your noodle, and `<extremesAndInflection>` is `1` for yes and `0` for no, e.g.:
+... where `<noodlethickness>` is the thickness of your noodle, `<extremesAndInflection>` and `<removeOverlap>` are `1` for yes and `0` for no, e.g.:
 	
 	Property: Filter
-	Value: Noodler;20;1
+	Value: Noodler;20;1;1
 
 At the end of the parameter value, you can hang `exclude:` or `include:`, followed by a comma-separated list of glyph names. This will apply the filter only to the included glyphs, or the glyphs not excluded, respectively.
 
@@ -43,6 +43,8 @@ E.g.:
 
 	Property: Filter
 	Value: Noodler;10,30;1
+
+The `<removeOverlap>` value defaults to `1` if you leave it out.
 
 ### Requirements
 
