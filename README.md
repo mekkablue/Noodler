@@ -46,6 +46,14 @@ E.g.:
 
 The `<removeOverlap>` value defaults to `1` if you leave it out.
 
+### Copy and Paste the Custom Parameter
+
+Via the gear menu in the lower left corner of the window, you can copy a custom parameter for the current settings into your clipboard:
+
+![Copying a Noodler parameter into the clipboard.](Noodler_Parameter.png "Open the gear menu for copying the custom parameter into the clipboard.")
+
+Afterwards, you can go to *File > Font Info > Instances* (Cmd-I), select an instance in the sidebar of the window, click in the *Custom Parameters* field in order to set the focus, and simply paste it (Cmd-V).
+
 ### Requirements
 
 The plugin needs Glyphs 1.4.3 or higher, running on OS X 10.7 or later. I can only test it in current OS versions, and I assume it will not work in versions of Mac OS X older than 10.7.
