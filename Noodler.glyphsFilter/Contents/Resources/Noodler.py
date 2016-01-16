@@ -275,6 +275,19 @@ class Noodler ( GSFilterPlugin ):
 		except Exception as e:
 			self.logToConsole( "noodleLayer: %s" % str(e) )
 
+	def bezierPathComp( self, thisLayer ):
+		"""Compatibility method for bezierPath before v2.3."""
+		layerBezierPath = NSBezierPath.bezierPath()
+		try:
+			layerBezierPath.appendBezierPath_( thisLayer.bezierPath() ) # until v2.2
+		except Exception as e:
+			layerBezierPath.appendBezierPath_( thisLayer.bezierPath ) # v2.3+
+		
+		for thisComponent in thisLayer.components:
+			layerBezierPath.appendBezierPath_( thisComponent.bezierPath() )
+		
+		return layerBezierPath
+
 	
 	def processLayerWithValues( self, Layer, noodleThicknesses, extremesAndInflections, removeOverlap ):
 		"""
@@ -292,7 +305,7 @@ class Noodler ( GSFilterPlugin ):
 				self.addExtremesToPathsInLayer( thinnestLayer )
 				self.addInflectionNodesInLayer( thinnestLayer )
 				self.expandMonoline( thinnestLayer, smallestRadius )
-				thisLayerBezierPath = thinnestLayer.bezierPath()
+				thisLayerBezierPath = self.bezierPathComp(thinnestLayer)
 				
 				# create a noodle for each noodle value:
 				collectionOfNoodledLayers = []
