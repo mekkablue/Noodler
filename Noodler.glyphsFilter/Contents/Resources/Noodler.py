@@ -11,12 +11,9 @@ path = MainBundle.bundlePath() + "/Contents/Scripts"
 if not path in sys.path:
 	sys.path.append( path )
 
-import GlyphsApp
-GLYPHSAPPVERSION = NSBundle.bundleForClass_(GSMenu).infoDictionary().objectForKey_("CFBundleShortVersionString")
+from GlyphsApp import LINE, CURVE, OFFCURVE
+import traceback
 
-GSLINE = 1
-GSCURVE = 35
-GSOFFCURVE = 65
 MAGICNUMBER = 4.0 * ( 2.0**0.5 - 1.0 ) / 3.0
 
 class Noodler ( GSFilterPlugin ):
@@ -29,7 +26,7 @@ class Noodler ( GSFilterPlugin ):
 			NSBundle.loadNibNamed_owner_( "NoodlerDialog", self )
 			return self
 		except Exception as e:
-			self.logToConsole( "init: %s" % str(e) )
+			self.logToConsole( "init: %s\n%s" % (str(e), traceback.format_exc()) )
 	
 	def interfaceVersion( self ):
 		"""
@@ -39,7 +36,7 @@ class Noodler ( GSFilterPlugin ):
 		try:
 			return 1
 		except Exception as e:
-			self.logToConsole( "interfaceVersion: %s" % str(e) )
+			self.logToConsole( "interfaceVersion: %s\n%s" % (str(e), traceback.format_exc()) )
 	
 	def title( self ):
 		"""
@@ -49,7 +46,7 @@ class Noodler ( GSFilterPlugin ):
 		try:
 			return "Noodler"
 		except Exception as e:
-			self.logToConsole( "title: %s" % str(e) )
+			self.logToConsole( "title: %s\n%s" % (str(e), traceback.format_exc()) )
 	
 	def actionName( self ):
 		"""
@@ -59,7 +56,7 @@ class Noodler ( GSFilterPlugin ):
 		try:
 			return "Noodle"
 		except Exception as e:
-			self.logToConsole( "actionName: %s" % str(e) )
+			self.logToConsole( "actionName: %s\n%s" % (str(e), traceback.format_exc()) )
 	
 	def keyEquivalent( self ):
 		""" 
@@ -70,7 +67,7 @@ class Noodler ( GSFilterPlugin ):
 		try:
 			return None
 		except Exception as e:
-			self.logToConsole( "keyEquivalent: %s" % str(e) )
+			self.logToConsole( "keyEquivalent: %s\n%s" % (str(e), traceback.format_exc()) )
 	
 	def setup( self ):
 		try:
@@ -95,7 +92,7 @@ class Noodler ( GSFilterPlugin ):
 			self.process_( None )
 			return None
 		except Exception as e:
-			self.logToConsole( "setup: %s" % str(e) )
+			self.logToConsole( "setup: %s\n%s" % (str(e), traceback.format_exc()) )
 			# if something goes wrong, you can return an NSError object with details
 	
 	def setDefaultFloatValue( self, userDataKey, defaultValue, FontMaster ):
@@ -104,12 +101,12 @@ class Noodler ( GSFilterPlugin ):
 		Assumes a floating point value. For use in self.setup().
 		"""
 		try:
-			if userDataKey in FontMaster.userData:
+			if FontMaster.userData[userDataKey]:
 				return FontMaster.userData[userDataKey].floatValue()
 			else:
 				return defaultValue
 		except Exception as e:
-			self.logToConsole( "setDefaultFloatValue: %s" % str(e) )
+			self.logToConsole( "setDefaultFloatValue: %s\n%s" % (str(e), traceback.format_exc()) )
 			
 	def setDefaultBooleanValue( self, userDataKey, defaultValue, FontMaster ):
 		"""
@@ -117,12 +114,12 @@ class Noodler ( GSFilterPlugin ):
 		Assumes a boolean value. For use in self.setup().
 		"""
 		try:
-			if userDataKey in FontMaster.userData:
+			if FontMaster.userData[userDataKey]:
 				return bool( FontMaster.userData[userDataKey] )
 			else:
 				return defaultValue
 		except Exception as e:
-			self.logToConsole( "setDefaultBooleanValue: %s" % str(e) )
+			self.logToConsole( "setDefaultBooleanValue: %s\n%s" % (str(e), traceback.format_exc()) )
 			
 	def setDefaultListValue( self, userDataKey, defaultValue, FontMaster ):
 		"""
@@ -130,7 +127,7 @@ class Noodler ( GSFilterPlugin ):
 		Assumes a boolean value. For use in self.setup().
 		"""
 		try:
-			if userDataKey in FontMaster.userData:
+			if FontMaster.userData[userDataKey]:
 				userDataText = FontMaster.userData[userDataKey]
 				userDataList = self.listOfFloats( userDataText )
 				if userDataList == None:
@@ -139,7 +136,7 @@ class Noodler ( GSFilterPlugin ):
 			else:
 				return defaultValue
 		except Exception as e:
-			self.logToConsole( "setDefaultListValue: %s" % str(e) )
+			self.logToConsole( "setDefaultListValue: %s\n%s" % (str(e), traceback.format_exc()) )
 			
 	def setDefaultIntegerValue( self, userDataKey, defaultValue, FontMaster ):
 		"""
@@ -147,12 +144,12 @@ class Noodler ( GSFilterPlugin ):
 		Assumes an integer value. For use in self.setup().
 		"""
 		try:
-			if userDataKey in FontMaster.userData:
+			if FontMaster.userData[userDataKey]:
 				return FontMaster.userData[userDataKey].integerValue()
 			else:
 				return defaultValue
 		except Exception as e:
-			self.logToConsole( "setDefaultIntegerValue: %s" % str(e) )
+			self.logToConsole( "setDefaultIntegerValue: %s\n%s" % (str(e), traceback.format_exc()) )
 	
 	@objc.IBAction
 	def setNoodleThickness_( self, sender ):
@@ -173,7 +170,7 @@ class Noodler ( GSFilterPlugin ):
 				self.noodleThickness = noodleThicknessList
 				self.process_( None )
 		except Exception as e:
-			self.logToConsole( "setNoodleThickness_: %s" % str(e) )
+			self.logToConsole( "setNoodleThickness_: %s\n%s" % (str(e), traceback.format_exc()) )
 	
 	@objc.IBAction
 	def setExtremesAndInflections_( self, sender ):
@@ -183,7 +180,7 @@ class Noodler ( GSFilterPlugin ):
 				self.extremesAndInflections = extremesAndInflections
 				self.process_( None )
 		except Exception as e:
-			self.logToConsole( "setExtremesAndInflections_: %s" % str(e) )
+			self.logToConsole( "setExtremesAndInflections_: %s\n%s" % (str(e), traceback.format_exc()) )
 	
 	@objc.IBAction
 	def setRemoveOverlap_( self, sender ):
@@ -193,7 +190,7 @@ class Noodler ( GSFilterPlugin ):
 				self.removeOverlap = removeOverlap
 				self.process_( None )
 		except Exception as e:
-			self.logToConsole( "setRemoveOverlap_: %s" % str(e) )
+			self.logToConsole( "setRemoveOverlap_: %s\n%s" % (str(e), traceback.format_exc()) )
 	
 	def isARealEnd( self, thisPoint, thisLayerBezierPath ):
 		try:
@@ -204,17 +201,14 @@ class Noodler ( GSFilterPlugin ):
 						return True
 			return False
 		except Exception as e:
-			self.logToConsole( "isARealEnd: %s" % str(e) )
+			self.logToConsole( "isARealEnd: %s\n%s" % (str(e), traceback.format_exc()) )
 	
 	def expandMonoline( self, Layer, noodleRadius ):
 		try:
 			offsetCurveFilter = NSClassFromString("GlyphsFilterOffsetCurve")
-			if GLYPHSAPPVERSION.startswith("1."):
-				offsetCurveFilter.offsetLayer_offsetX_offsetY_makeStroke_position_error_shadow_( Layer, noodleRadius, noodleRadius, True, 0.5, None, None )
-			else:
-				offsetCurveFilter.offsetLayer_offsetX_offsetY_makeStroke_autoStroke_position_error_shadow_( Layer, noodleRadius, noodleRadius, True, False, 0.5, None,None)
+			offsetCurveFilter.offsetLayer_offsetX_offsetY_makeStroke_autoStroke_position_error_shadow_( Layer, noodleRadius, noodleRadius, True, False, 0.5, None,None)
 		except Exception as e:
-			self.logToConsole( "expandMonoline: %s" % str(e) )
+			self.logToConsole( "expandMonoline: %s\n%s" % (str(e), traceback.format_exc()) )
 	
 	def noodleLayer( self, thisLayer, noodleThickness, extremesAndInflections, removeOverlap, noodleBezierPath ):
 		try:
@@ -242,8 +236,8 @@ class Noodler ( GSFilterPlugin ):
 
 				# Add extremes and inflections:
 				if extremesAndInflections:
-					self.addExtremesToPathsInLayer( Layer )
-					self.addInflectionNodesInLayer( Layer )
+					Layer.addExtremePoints()
+					Layer.addInflectionPoints()
 					
 				# Expand monoline:
 				self.expandMonoline( Layer, noodleRadius )
@@ -253,16 +247,15 @@ class Noodler ( GSFilterPlugin ):
 					circleCenter = thisNodePair[0]
 					if self.isARealEnd( circleCenter, noodleBezierPath ):
 						circleAtThisPosition = self.drawCircle( circleCenter, noodleRadius )
-						if not self.extremesAndInflections:
-							angle = self.angle( circleCenter, thisNodePair[1] )
-							for thisNode in circleAtThisPosition.nodes:
-								thisNode.position = self.rotate( thisNode.position, angle, circleCenter )
+						#if not self.extremesAndInflections:
+						#	angle = self.angle( circleCenter, thisNodePair[1] )
+						#	rotation = self.transform( rotate=angle )
+						#	circleAtThisPosition.applyTransform( rotation )
 						Layer.paths.append( circleAtThisPosition )
 
 				# Remove overlaps:
-				if removeOverlap != False:
-					removeOverlapFilter = NSClassFromString("GlyphsFilterRemoveOverlap").alloc().init()
-					removeOverlapFilter.removeOverlapFromLayer_gridSize_checkSelection_error_( Layer, 0.0, False, None )
+				if removeOverlap:
+					Layer.removeOverlap()
 
 				# Round Corners:
 				roundCornerFilter = NSClassFromString("GlyphsFilterRoundCorner")
@@ -273,22 +266,15 @@ class Noodler ( GSFilterPlugin ):
 			
 			return Layer
 		except Exception as e:
-			self.logToConsole( "noodleLayer: %s" % str(e) )
+			self.logToConsole( "noodleLayer: %s\n%s" % (str(e), traceback.format_exc()) )
 
 	def bezierPathComp( self, thisLayer ):
-		"""Compatibility method for bezierPath before v2.3."""
 		layerBezierPath = NSBezierPath.bezierPath()
-		try:
-			layerBezierPath.appendBezierPath_( thisLayer.bezierPath() ) # until v2.2
-		except Exception as e:
-			layerBezierPath.appendBezierPath_( thisLayer.bezierPath ) # v2.3+
-		
+		layerBezierPath.appendBezierPath_( thisLayer.bezierPath ) # v2.3+
 		for thisComponent in thisLayer.components:
 			layerBezierPath.appendBezierPath_( thisComponent.bezierPath() )
-		
 		return layerBezierPath
 
-	
 	def processLayerWithValues( self, Layer, noodleThicknesses, extremesAndInflections, removeOverlap ):
 		"""
 		This is where your code for processing each layer goes.
@@ -302,8 +288,8 @@ class Noodler ( GSFilterPlugin ):
 				# Virtual layer for checking whether a circle should be added:
 				thinnestLayer = Layer.copy()
 				smallestRadius = min(noodleThicknesses) * 0.5
-				self.addExtremesToPathsInLayer( thinnestLayer )
-				self.addInflectionNodesInLayer( thinnestLayer )
+				thinnestLayer.addExtremePoints()
+				thinnestLayer.addInflectionPoints()
 				self.expandMonoline( thinnestLayer, smallestRadius )
 				thisLayerBezierPath = self.bezierPathComp(thinnestLayer)
 				
@@ -326,7 +312,7 @@ class Noodler ( GSFilterPlugin ):
 				# correct path direction to get the black/white right:
 				Layer.correctPathDirection()
 		except Exception as e:
-			self.logToConsole( "processLayerWithValues: %s" % str(e) )
+			self.logToConsole( "processLayerWithValues: %s\n%s" % (str(e), traceback.format_exc()) )
 	
 	def customParameterString( self ):
 		"""Return the custom parameter string for the gear menu."""
@@ -336,7 +322,7 @@ class Noodler ( GSFilterPlugin ):
 			thisParameter = "Noodler; %s; %i; %i" % ( stringOfNoodleThicknesses.replace(" ",""), int(self.extremesAndInflections), int(self.removeOverlap) )
 			return thisParameter
 		except Exception as e:
-			self.logToConsole( "customParameterString: %s" % str(e) )
+			self.logToConsole( "customParameterString: %s\n%s" % (str(e), traceback.format_exc()) )
 	
 	def listOfFloats( self, commaSeparatedString ):
 		try:
@@ -345,7 +331,25 @@ class Noodler ( GSFilterPlugin ):
 				floatList.append( float( thisItem.strip() ) )
 			return floatList
 		except Exception as e:
-			self.logToConsole( "listOfFloats: %s" % str(e) )
+			self.logToConsole( "listOfFloats: %s\n%s" % (str(e), traceback.format_exc()) )
+	
+	def transform( self, shiftX=0.0, shiftY=0.0, rotate=0.0, skew=0.0, scale=1.0 ):
+		myTransform = NSAffineTransform.transform()
+		if rotate:
+			myTransform.rotateByDegrees_(rotate)
+		if scale != 1.0:
+			myTransform.scaleBy_(scale)
+		if not (shiftX == 0.0 and shiftY == 0.0):
+			myTransform.translateXBy_yBy_(shiftX,shiftY)
+		if skew:
+			skewStruct = NSAffineTransformStruct()
+			skewStruct.m11 = 1.0
+			skewStruct.m22 = 1.0
+			skewStruct.m21 = math.tan(math.radians(skew))
+			skewTransform = NSAffineTransform.transform()
+			skewTransform.setTransformStruct_(skewStruct)
+			myTransform.appendTransform_(skewTransform)
+		return myTransform
 	
 	def rotate( self, position, angle=180.0, origin=NSPoint(0.0,0.0) ):
 		"""Rotates x/y around x_orig/y_orig by angle and returns result as [x,y]."""
@@ -359,82 +363,22 @@ class Noodler ( GSFilterPlugin ):
 		return NSPoint( new_x, new_y )
 
 	def angle( self, firstPoint, secondPoint ):
+		"""
+		Returns the angle (in degrees) of the straight line between firstPoint and secondPoint,
+		0 degrees being the second point to the right of first point.
+		firstPoint, secondPoint: must be NSPoint or GSNode
+		"""
+		xDiff = secondPoint.x - firstPoint.x
+		yDiff = secondPoint.y - firstPoint.y
+		return math.degrees(math.atan2(yDiff,xDiff))
+
+	def oldangle( self, firstPoint, secondPoint ):
 		xDiff = firstPoint.x - secondPoint.x
 		yDiff = firstPoint.y - secondPoint.y
 		tangens = yDiff / xDiff
 		angle = math.atan( tangens ) * 180.0 / math.pi
 		return angle
-	
-	def addExtremesToPathsInLayer( self, thisLayer ):
-		"""Adds extrema to all paths in thisLayer."""
-		try:
-			for thisPath in thisLayer.paths:
-				thisPath.addExtremes_(False)
-		except Exception as e:
-			self.logToConsole( "addExtremesToPathsInLayer: %s" % str(e) )
-	
-	def addInflectionNodesInLayer( self, thisLayer ):
-		"""
-		Adds inflection nodes to all paths in thisLayer.
-		"""
-		try:
-			for ip in range( len( thisLayer.paths )):
-				thisPath = thisLayer.paths[ip]
-				numberOfNodes = len( thisPath.nodes )
 
-				for i in range(numberOfNodes-1, -1, -1):
-					node = thisPath.nodes[i]
-					if node.type == 35: #CURVE
-						nl = [ thisPath.nodes[ (x+numberOfNodes)%numberOfNodes ] for x in range( i-3, i+1 ) ]
-						inflections = self.computeInflection( nl[0], nl[1], nl[2], nl[3] )
-						if len(inflections) == 1:
-							inflectionTime = inflections[0]
-							thisPath.insertNodeWithPathTime_( i + inflectionTime )
-		except Exception as e:
-			self.logToConsole( "addInflectionNodesInLayer: %s" % str(e) )
-
-	def computeInflection( self, p1, p2, p3, p4 ):
-		"""
-		For a given curve p1, p2, p3, p4,
-		t for the first inflection point is calculated and returned.
-		"""
-		try:
-			Result = []
-			ax = p2.x - p1.x
-			ay = p2.y - p1.y
-			bx = p3.x - p2.x - ax
-			by = p3.y - p2.y - ay
-			cx = p4.x - p3.x - ax - bx - bx
-			cy = p4.y - p3.y - ay - by - by
-			c0 = ( ax * by ) - ( ay * bx )
-			c1 = ( ax * cy ) - ( ay * cx )
-			c2 = ( bx * cy ) - ( by * cx )
-	
-			if abs(c2) > 0.00001:
-				discr = ( c1 ** 2 ) - ( 4 * c0 * c2)
-				c2 *= 2
-				if abs(discr) < 0.000001:
-					root = -c1 / c2
-					if (root > 0.001) and (root < 0.99):
-						Result.append(root)
-				elif discr > 0:
-					discr = discr ** 0.5
-					root = ( -c1 - discr ) / c2
-					if (root > 0.001) and (root < 0.99):
-						Result.append(root)
-			
-					root = ( -c1 + discr ) / c2
-					if (root > 0.001) and (root < 0.99):
-						Result.append(root)
-			elif c1 != 0.0:
-				root = - c0 / c1
-				if (root > 0.001) and (root < 0.99):
-					Result.append(root)
-
-			return Result
-		except Exception as e:
-			self.logToConsole( "computeInflection: %s" % str(e) )
-	
 	def drawCircle( self, position, radius ):
 		try:
 			handle = MAGICNUMBER * radius
@@ -458,19 +402,19 @@ class Noodler ( GSFilterPlugin ):
 			for thisSetOfNodes in myCoordinates:
 				if len(thisSetOfNodes) == 1:
 					newNode = GSNode()
-					newNode.type = GSLINE
+					newNode.type = LINE
 					newNode.position = thisSetOfNodes[0]
 					myCircle.nodes.append( newNode )
 					
 				elif len(thisSetOfNodes) == 3:
 					for thisHandlePosition in thisSetOfNodes[:2]:
 						newHandle = GSNode()
-						newHandle.type = GSOFFCURVE
+						newHandle.type = OFFCURVE
 						newHandle.position = thisHandlePosition
 						myCircle.nodes.append( newHandle )
 						
 					newNode = GSNode()
-					newNode.type = GSCURVE
+					newNode.type = CURVE
 					newNode.position = thisSetOfNodes[2]
 					myCircle.nodes.append( newNode )
 			
@@ -479,7 +423,7 @@ class Noodler ( GSFilterPlugin ):
 			
 			return myCircle
 		except Exception as e:
-			self.logToConsole( "drawCircle: %s" % str(e) )
+			self.logToConsole( "drawCircle: %s\n%s" % (str(e), traceback.format_exc()) )
 
 	def processFont_withArguments_( self, Font, Arguments ):
 		"""
@@ -525,7 +469,7 @@ class Noodler ( GSFilterPlugin ):
 				Layer = Glyph.layerForKey_( FontMasterId )
 				self.processLayerWithValues( Layer, self.noodleThickness, self.extremesAndInflections, self.removeOverlap )
 		except Exception as e:
-			self.logToConsole( "processFont_withArguments_: %s" % str(e) )
+			self.logToConsole( "processFont_withArguments_: %s\n%s" % (str(e), traceback.format_exc()) )
 	
 	def selectionOnLayer( self, thisLayer ):
 		"""Compatibility mathod for app versions prior to 2.2."""
@@ -535,8 +479,7 @@ class Noodler ( GSFilterPlugin ):
 			except:
 				return thisLayer.selection
 		except Exception as e:
-			self.logToConsole( "selectionOnLayer: %s" % str(e) )
-			
+			self.logToConsole( "selectionOnLayer: %s\n%s" % (str(e), traceback.format_exc()) )
 	
 	def process_( self, sender ):
 		"""
@@ -578,7 +521,7 @@ class Noodler ( GSFilterPlugin ):
 			# call the superclass to trigger the immediate redraw:
 			super( Noodler, self ).process_( sender )
 		except Exception as e:
-			self.logToConsole( "process_: %s" % str(e) )
+			self.logToConsole( "process_: %s\n%s" % (str(e), traceback.format_exc()) )
 	
 	def logToConsole( self, message ):
 		"""
