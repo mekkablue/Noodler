@@ -272,7 +272,10 @@ class Noodler ( GSFilterPlugin ):
 		layerBezierPath = NSBezierPath.bezierPath()
 		layerBezierPath.appendBezierPath_( thisLayer.bezierPath ) # v2.3+
 		for thisComponent in thisLayer.components:
-			layerBezierPath.appendBezierPath_( thisComponent.bezierPath() )
+			try:
+				layerBezierPath.appendBezierPath_( thisComponent.bezierPath )
+			except:
+				layerBezierPath.appendBezierPath_( thisComponent.bezierPath() )
 		return layerBezierPath
 
 	def processLayerWithValues( self, Layer, noodleThicknesses, extremesAndInflections, removeOverlap ):
