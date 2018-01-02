@@ -7,7 +7,6 @@
         <customObject id="-2" userLabel="File's Owner" customClass="Noodler">
             <connections>
                 <outlet property="_view" destination="1" id="sc4-cV-ZFh"/>
-                <outlet property="componentScaleField" destination="gaP-K1-kr4" id="MKg-yn-slz"/>
                 <outlet property="extremesAndInflectionsField" destination="xrN-19-lsQ" id="34G-Zi-gvd"/>
                 <outlet property="noodleThicknessField" destination="gaP-K1-kr4" id="Tdg-vO-bMB"/>
                 <outlet property="removeOverlapField" destination="bAz-vF-czO" id="p55-hK-hM5"/>
