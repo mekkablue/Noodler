@@ -9,8 +9,6 @@ import traceback
 
 MAGICNUMBER = 4.0 * ( 2.0**0.5 - 1.0 ) / 3.0
 
-GSFilterPlugin = objc.lookUpClass("GSFilterPlugin")
-
 class Noodler ( GSFilterPlugin ):
 	noodleThicknessField = objc.IBOutlet()
 	extremesAndInflectionsField = objc.IBOutlet()
