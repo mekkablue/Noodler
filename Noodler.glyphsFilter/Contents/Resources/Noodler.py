@@ -72,16 +72,16 @@ class Noodler ( GSFilterPlugin ):
 			super( Noodler, self ).setup()
 			FontMaster = self.valueForKey_( "fontMaster" )
 			
-			self.noodleThickness = self.setDefaultListValue( "noodleThickness", [10.0,20.0], FontMaster )
+			self.noodleThickness = self.getDefaultListValue( "noodleThickness", [10.0,20.0], FontMaster )
 			stringList = []
 			for thisItem in self.noodleThickness:
 				stringList.append( str(thisItem) )
 			self.noodleThicknessField.setStringValue_( ", ".join(stringList) )
 			
-			self.extremesAndInflections = self.setDefaultBooleanValue( "noodleExtremesAndInflections", True, FontMaster )
+			self.extremesAndInflections = self.getDefaultBooleanValue( "noodleExtremesAndInflections", True, FontMaster )
 			self.extremesAndInflectionsField.setObjectValue_( int( self.extremesAndInflections ) )
 
-			self.removeOverlap = self.setDefaultBooleanValue( "noodleRemoveOverlap", True, FontMaster )
+			self.removeOverlap = self.getDefaultBooleanValue( "noodleRemoveOverlap", True, FontMaster )
 			self.removeOverlapField.setObjectValue_( int( self.removeOverlap ) )
 			
 			self.process_( None )
@@ -90,20 +90,7 @@ class Noodler ( GSFilterPlugin ):
 			self.logToConsole( "setup: %s\n%s" % (str(e), traceback.format_exc()) )
 			# if something goes wrong, you can return an NSError object with details
 	
-	def setDefaultFloatValue( self, userDataKey, defaultValue, FontMaster ):
-		"""
-		Returns either the stored or default value for the given userDataKey.
-		Assumes a floating point value. For use in self.setup().
-		"""
-		try:
-			if FontMaster.userData[userDataKey]:
-				return FontMaster.userData[userDataKey].floatValue()
-			else:
-				return defaultValue
-		except Exception as e:
-			self.logToConsole( "setDefaultFloatValue: %s\n%s" % (str(e), traceback.format_exc()) )
-			
-	def setDefaultBooleanValue( self, userDataKey, defaultValue, FontMaster ):
+	def getDefaultBooleanValue( self, userDataKey, defaultValue, FontMaster ):
 		"""
 		Returns either the stored or default value for the given userDataKey.
 		Assumes a boolean value. For use in self.setup().
@@ -114,9 +101,9 @@ class Noodler ( GSFilterPlugin ):
 			else:
 				return defaultValue
 		except Exception as e:
-			self.logToConsole( "setDefaultBooleanValue: %s\n%s" % (str(e), traceback.format_exc()) )
-			
-	def setDefaultListValue( self, userDataKey, defaultValue, FontMaster ):
+			self.logToConsole( "getDefaultBooleanValue: %s\n%s" % (str(e), traceback.format_exc()) )
+	
+	def getDefaultListValue( self, userDataKey, defaultValue, FontMaster ):
 		"""
 		Returns either the stored or default value for the given userDataKey.
 		Assumes a boolean value. For use in self.setup().
@@ -131,20 +118,7 @@ class Noodler ( GSFilterPlugin ):
 			else:
 				return defaultValue
 		except Exception as e:
-			self.logToConsole( "setDefaultListValue: %s\n%s" % (str(e), traceback.format_exc()) )
-			
-	def setDefaultIntegerValue( self, userDataKey, defaultValue, FontMaster ):
-		"""
-		Returns either the stored or default value for the given userDataKey.
-		Assumes an integer value. For use in self.setup().
-		"""
-		try:
-			if FontMaster.userData[userDataKey]:
-				return FontMaster.userData[userDataKey].integerValue()
-			else:
-				return defaultValue
-		except Exception as e:
-			self.logToConsole( "setDefaultIntegerValue: %s\n%s" % (str(e), traceback.format_exc()) )
+			self.logToConsole( "getDefaultListValue: %s\n%s" % (str(e), traceback.format_exc()) )
 	
 	@objc.IBAction
 	def setNoodleThickness_( self, sender ):
