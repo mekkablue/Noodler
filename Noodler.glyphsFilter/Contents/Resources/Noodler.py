@@ -2,19 +2,14 @@
 # encoding: utf-8
 
 import objc
-from Foundation import *
-from AppKit import *
+from GlyphsApp.plugins import *
 import sys, os, re, math
-
-MainBundle = NSBundle.mainBundle()
-path = MainBundle.bundlePath() + "/Contents/Scripts"
-if not path in sys.path:
-	sys.path.append( path )
-
 from GlyphsApp import LINE, CURVE, OFFCURVE
 import traceback
 
 MAGICNUMBER = 4.0 * ( 2.0**0.5 - 1.0 ) / 3.0
+
+GSFilterPlugin = objc.lookUpClass("GSFilterPlugin")
 
 class Noodler ( GSFilterPlugin ):
 	noodleThicknessField = objc.IBOutlet()
