@@ -19,14 +19,14 @@ It turns monolines of all selected glyphs into noodles. After installation, it w
 Alternatively, you can also use it as a custom parameter:
 
 	Property: Filter
-	Value: Noodler;<noodlethickness>;<extremesAndInflection>;<removeOverlap>
+	Value: Noodler; <noodlethickness>; <extremesAndInflection>; <removeOverlap>
 
 ... where `<noodlethickness>` is the thickness of your noodle, `<extremesAndInflection>` and `<removeOverlap>` are `1` for yes and `0` for no, e.g.:
-	
+
 	Property: Filter
 	Value: Noodler;20;1;1
 
-At the end of the parameter value, you can hang `exclude:` or `include:`, followed by a comma-separated list of glyph names. This will apply the filter only to the included glyphs, or the glyphs not excluded, respectively.
+At the end of the parameter value, you can hang `exclude:` or `include:`, followed by a comma-separated list of glyph names. This will apply the filter only to the included glyphs, or the glyphs not excluded, respectively. The space around the semicolons is optional.
 
 ### Inline Noodling
 
@@ -37,7 +37,7 @@ You can have inline noodles by adding any number of noodle values, separated by 
 It also works as a custom parameter:
 
 	Property: Filter
-	Value: Noodler;<noodlethickness>,<noodlethickness>,<noodlethickness>;<extremesAndInflection>
+	Value: Noodler; <noodlethickness>,<noodlethickness>,<noodlethickness>; <extremesAndInflection>
 
 E.g.:
 
