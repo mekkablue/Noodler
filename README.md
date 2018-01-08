@@ -56,12 +56,12 @@ Afterwards, you can go to *File > Font Info > Instances* (Cmd-I), select an inst
 
 ### Requirements
 
-The plugin needs Glyphs 1.4.3 or higher, running on OS X 10.7 or later. I can only test it in current OS versions, and I assume it will not work in versions of Mac OS X older than 10.7.
+The plugin needs Glyphs 2.4 or higher. I assume it will not work in previous versions.
 
 ### License
 
-Copyright 2014 Rainer Erich Scheichelbauer (@mekkablue).
-Based on sample code by Georg Seifert (@schriftgestalt).
+Copyright 2014-2018 Rainer Erich Scheichelbauer (@mekkablue).
+Based on sample code by Georg Seifert (@schriftgestalt) and Jan Gerner (@yanone).
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
