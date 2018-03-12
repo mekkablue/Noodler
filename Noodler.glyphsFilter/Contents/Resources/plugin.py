@@ -81,8 +81,13 @@ class Noodler(FilterWithDialog):
 			extremesAndInflections = True
 			removeOverlap = True
 			# overwrite with values from parameters:
-			for i in range(len(customParameters)):
-				(noodleThicknessString,extremesAndInflections,removeOverlap)[i] = customParameters[i]
+			try:
+				noodleThicknessString = customParameters[0]
+				extremesAndInflections = customParameters[1]
+				removeOverlap = customParameters[2]
+			except:
+				# probably exceeded customParameters
+				pass
 		
 		# Called through UI, use stored values:
 		else:
