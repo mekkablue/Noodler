@@ -194,7 +194,18 @@ class Noodler(FilterWithDialog):
 
 			# Remove overlaps:
 			if removeOverlap:
-				Layer.removeOverlap()
+				if Layer.bounds.origin.x + Layer.bounds.size.width > 8190.0:
+					centerX = Layer.bounds.origin.x + Layer.bounds.size.width * 0.5
+					if centerX < 0.0:
+						print "Warning: glyph '%s' too wide for overlap removal!" % Layer.parent.name
+					else:
+						leftShiftMatrix = self.transform(shiftX=-centerX).transformStruct()
+						rightShiftMatrix = self.transform(shiftX=centerX).transformStruct()
+						Layer.applyTransform(leftShiftMatrix)
+						Layer.removeOverlap()
+						Layer.applyTransform(rightShiftMatrix)
+				else:	
+					Layer.removeOverlap()
 
 			# Round Corners:
 			roundCornerFilter = NSClassFromString("GlyphsFilterRoundCorner")
@@ -204,7 +215,7 @@ class Noodler(FilterWithDialog):
 		Layer.cleanUpPaths()
 		
 		return Layer
-
+	
 	def bezierPathComp( self, thisLayer ):
 		layerBezierPath = NSBezierPath.bezierPath()
 		layerBezierPath.appendBezierPath_( thisLayer.bezierPath ) # v2.3+
