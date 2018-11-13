@@ -1,6 +1,6 @@
 # encoding: utf-8
 
-###########################################################################################################
+######################################################################################################
 #
 #
 #	Filter with dialog Plugin
@@ -12,7 +12,7 @@
 #	https://github.com/schriftgestalt/GlyphsSDK/tree/master/Python%20Templates
 #
 #
-###########################################################################################################
+######################################################################################################
 
 import objc, math
 from GlyphsApp import *
@@ -32,10 +32,12 @@ class Noodler(FilterWithDialog):
 		self.menuName = Glyphs.localize({
 			'en': u'Noodler',
 			'de': u'Nudler',
+			'fr': u'Nouilleur',
 		})
 		self.actionButtonLabel = Glyphs.localize({
 			'en': u'Noodle',
 			'de': u'Nudeln',
+			'fr': u'Nouiller',
 		})
 		# Load dialog from .nib (without .extension)
 		self.loadNib('IBdialog', __file__)
