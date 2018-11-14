@@ -33,11 +33,13 @@ class Noodler(FilterWithDialog):
 			'en': u'Noodler',
 			'de': u'Nudler',
 			'fr': u'Nouilleur',
+			'es': u'Fileteador',
 		})
 		self.actionButtonLabel = Glyphs.localize({
 			'en': u'Noodle',
 			'de': u'Nudeln',
 			'fr': u'Nouiller',
+			'es': u'Expandir',
 		})
 		# Load dialog from .nib (without .extension)
 		self.loadNib('IBdialog', __file__)
