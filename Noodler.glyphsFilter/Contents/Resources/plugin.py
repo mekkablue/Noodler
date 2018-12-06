@@ -34,7 +34,7 @@ class Noodler(FilterWithDialog):
 			'de': u'Nudler',
 			'fr': u'Nouilleur',
 			'es': u'Fileteador',
-			'zh': u'等线圆体',
+			'zh': u'🍜等线圆体',
 		})
 		self.actionButtonLabel = Glyphs.localize({
 			'en': u'Noodle',

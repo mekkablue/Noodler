@@ -1,7 +1,7 @@
 # Noodler.glyphsFilter
 
 This is a plugin for the [Glyphs font editor](http://glyphsapp.com/) by Georg Seifert.
-It turns monolines of all selected glyphs into noodles. After installation, it will add the menu item *Filter > Noodler* (de: Nudler, fr: Nouilleur, es: Fileteador, zh: 等线圆体). You can set a keyboard shortcut in System Preferences.
+It turns monolines of all selected glyphs into noodles. After installation, it will add the menu item *Filter > Noodler* (de: Nudler, fr: Nouilleur, es: Fileteador, zh: 🍜等线圆体). You can set a keyboard shortcut in System Preferences.
 
 ![Noodling a monoline.](Noodler.png "Noodler")
 
