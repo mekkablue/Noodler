@@ -18,8 +18,31 @@ from __future__ import division, print_function, unicode_literals
 import objc
 from GlyphsApp import *
 from GlyphsApp.plugins import *
+from Foundation import NSClassFromString
 
 MAGICNUMBER = 4.0 * ( 2.0**0.5 - 1.0 ) / 3.0
+
+@objc.python_method
+def offsetLayer( thisLayer, offset, makeStroke=False, position=0.5, autoStroke=False ):
+	offsetFilter = NSClassFromString("GlyphsFilterOffsetCurve")
+	try:
+		# GLYPHS 3:	
+		offsetFilter.offsetLayer_offsetX_offsetY_makeStroke_autoStroke_position_metrics_error_shadow_capStyleStart_capStyleEnd_keepCompatibleOutlines_(
+			thisLayer,
+			offset, offset, # horizontal and vertical offset
+			makeStroke,     # if True, creates a stroke
+			autoStroke,     # if True, distorts resulting shape to vertical metrics
+			position,       # stroke distribution to the left and right, 0.5 = middle
+			None, None, None, 0, 0, False )
+	except:
+		# GLYPHS 2:
+		offsetFilter.offsetLayer_offsetX_offsetY_makeStroke_autoStroke_position_error_shadow_(
+			thisLayer,
+			offset, offset, # horizontal and vertical offset
+			makeStroke,     # if True, creates a stroke
+			autoStroke,     # if True, distorts resulting shape to vertical metrics
+			position,       # stroke distribution to the left and right, 0.5 = middle
+			None, None )
 
 class Noodler(FilterWithDialog):
 	
@@ -126,13 +149,26 @@ class Noodler(FilterWithDialog):
 					collectionOfNoodledLayers.append( thisLayer )
 
 			# clean out Layer:
-			for pathIndex in range(len(Layer.paths))[::-1]:
-				Layer.removePathAtIndex_( pathIndex )
+			try:
+				# GLYPHS 3
+				for shapeIndex in reversed(range(len(Layer.shapes))):
+					thisShape = Layer.shapes[shapeIndex]
+					if type(thisShape) is GSPath:
+						Layer.removeShape_(thisShape)
+			except:
+				# GLYPHS 2
+				for pathIndex in reversed(range(len(Layer.paths))):
+					Layer.removePathAtIndex_( pathIndex )
 
 			# add all noodles to the path:
 			for noodledLayer in collectionOfNoodledLayers:
 				for noodledPath in noodledLayer.paths:
-					Layer.addPath_( noodledPath )
+					try:
+						# GLYPHS 3:
+						Layer.addShape_( noodledPath )
+					else:
+						# GLYPHS 2:
+						Layer.addPath_( noodledPath )
 
 			# correct path direction to get the black/white right:
 			Layer.correctPathDirection()
@@ -158,10 +194,11 @@ class Noodler(FilterWithDialog):
 	@objc.python_method
 	def expandMonoline( self, Layer, noodleRadius ):
 		try:
-			offsetCurveFilter = NSClassFromString("GlyphsFilterOffsetCurve")
-			offsetCurveFilter.offsetLayer_offsetX_offsetY_makeStroke_autoStroke_position_error_shadow_( Layer, noodleRadius, noodleRadius, True, False, 0.5, None,None)
+			offsetLayer( Layer, noodleRadius, makeStroke=True )
 		except Exception as e:
-			self.logToConsole( "expandMonoline: %s\n%s" % (str(e), traceback.format_exc()) )
+			print(e)
+			import traceback
+			print(traceback.format_exc())
 	
 	@objc.python_method
 	def noodleLayer( self, thisLayer, noodleThickness, extremesAndInflections, removeOverlap, noodleBezierPath ):
