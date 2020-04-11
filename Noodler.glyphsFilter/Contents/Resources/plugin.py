@@ -166,7 +166,7 @@ class Noodler(FilterWithDialog):
 					try:
 						# GLYPHS 3:
 						Layer.addShape_( noodledPath )
-					else:
+					except:
 						# GLYPHS 2:
 						Layer.addPath_( noodledPath )
 
