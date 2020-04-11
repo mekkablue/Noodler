@@ -212,7 +212,7 @@ class Noodler(FilterWithDialog):
 				if Layer.bounds.origin.x + Layer.bounds.size.width > 8190.0:
 					centerX = Layer.bounds.origin.x + Layer.bounds.size.width * 0.5
 					if centerX < 0.0:
-						print "Warning: glyph '%s' too wide for overlap removal!" % Layer.parent.name
+						print("Warning: glyph '%s' too wide for overlap removal!" % Layer.parent.name)
 					else:
 						leftShiftMatrix = self.transform(shiftX=-centerX).transformStruct()
 						rightShiftMatrix = self.transform(shiftX=centerX).transformStruct()
