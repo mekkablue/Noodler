@@ -1,6 +1,7 @@
 # encoding: utf-8
+from __future__ import division, print_function, unicode_literals
 
-######################################################################################################
+###########################################################################################################
 #
 #
 #	Filter with dialog Plugin
@@ -12,9 +13,9 @@
 #	https://github.com/schriftgestalt/GlyphsSDK/tree/master/Python%20Templates
 #
 #
-######################################################################################################
+###########################################################################################################
 
-import objc, math
+import objc
 from GlyphsApp import *
 from GlyphsApp.plugins import *
 
@@ -28,6 +29,7 @@ class Noodler(FilterWithDialog):
 	extremesAndInflectionsCheckbox = objc.IBOutlet()
 	removeOverlapCheckbox = objc.IBOutlet()
 	
+	@objc.python_method
 	def settings(self):
 		self.menuName = Glyphs.localize({
 			'en': u'Noodler',
@@ -47,6 +49,7 @@ class Noodler(FilterWithDialog):
 		self.loadNib('IBdialog', __file__)
 	
 	# On dialog show
+	@objc.python_method
 	def start(self):
 		# Set default setting if not present:
 		Glyphs.registerDefault('com.mekkablue.Noodler.noodleThickness', "20.0")
@@ -78,6 +81,7 @@ class Noodler(FilterWithDialog):
 		self.update()
 	
 	# Actual filter
+	@objc.python_method
 	def filter(self, Layer, inEditView, customParameters):
 		
 		# Called on font export, get value from customParameters:
@@ -133,6 +137,7 @@ class Noodler(FilterWithDialog):
 			# correct path direction to get the black/white right:
 			Layer.correctPathDirection()
 	
+	@objc.python_method
 	def generateCustomParameter( self ):
 		return "%s; %s; %i; %i" % (
 			self.__class__.__name__,
@@ -140,11 +145,8 @@ class Noodler(FilterWithDialog):
 			Glyphs.defaults['com.mekkablue.Noodler.extremesAndInflections'],
 			Glyphs.defaults['com.mekkablue.Noodler.removeOverlap'],
 			)
-	
-	def __file__(self):
-		"""Please leave this method unchanged"""
-		return __file__
 
+	@objc.python_method
 	def isARealEnd( self, thisPoint, thisLayerBezierPath ):
 		for xDiff in [-1.0,1.0]:
 			for yDiff in [-1.0,1.0]:
@@ -153,6 +155,7 @@ class Noodler(FilterWithDialog):
 					return True
 		return False
 	
+	@objc.python_method
 	def expandMonoline( self, Layer, noodleRadius ):
 		try:
 			offsetCurveFilter = NSClassFromString("GlyphsFilterOffsetCurve")
@@ -160,6 +163,7 @@ class Noodler(FilterWithDialog):
 		except Exception as e:
 			self.logToConsole( "expandMonoline: %s\n%s" % (str(e), traceback.format_exc()) )
 	
+	@objc.python_method
 	def noodleLayer( self, thisLayer, noodleThickness, extremesAndInflections, removeOverlap, noodleBezierPath ):
 		# Catch a crash:
 		if noodleThickness == 0.0:
@@ -196,7 +200,12 @@ class Noodler(FilterWithDialog):
 				circleCenter = thisNodePair[0]
 				if self.isARealEnd( circleCenter, noodleBezierPath ):
 					circleAtThisPosition = self.drawCircle( circleCenter, noodleRadius )
-					Layer.paths.append( circleAtThisPosition )
+					try:
+						# GLYPHS 3:
+						Layer.shapes.append( circleAtThisPosition )
+					except:
+						# GLYPHS 2:
+						Layer.paths.append( circleAtThisPosition )
 
 			# Remove overlaps:
 			if removeOverlap:
@@ -222,6 +231,7 @@ class Noodler(FilterWithDialog):
 		
 		return Layer
 	
+	@objc.python_method
 	def bezierPathComp( self, thisLayer ):
 		layerBezierPath = NSBezierPath.bezierPath()
 		layerBezierPath.appendBezierPath_( thisLayer.bezierPath ) # v2.3+
@@ -232,12 +242,14 @@ class Noodler(FilterWithDialog):
 				layerBezierPath.appendBezierPath_( thisComponent.bezierPath() )
 		return layerBezierPath
 
+	@objc.python_method
 	def listOfFloats( self, commaSeparatedString ):
 		floatList = []
 		for thisItem in str(commaSeparatedString).split(","):
 			floatList.append( float( thisItem.strip() ) )
 		return floatList
 	
+	@objc.python_method
 	def transform( self, shiftX=0.0, shiftY=0.0, rotate=0.0, skew=0.0, scale=1.0 ):
 		myTransform = NSAffineTransform.transform()
 		if rotate:
@@ -256,6 +268,7 @@ class Noodler(FilterWithDialog):
 			myTransform.appendTransform_(skewTransform)
 		return myTransform
 	
+	@objc.python_method
 	def angle( self, firstPoint, secondPoint ):
 		"""
 		Returns the angle (in degrees) of the straight line between firstPoint and secondPoint,
@@ -266,6 +279,7 @@ class Noodler(FilterWithDialog):
 		yDiff = secondPoint.y - firstPoint.y
 		return math.degrees(math.atan2(yDiff,xDiff))
 
+	@objc.python_method
 	def drawCircle( self, position, radius ):
 		handle = MAGICNUMBER * radius
 		x = position.x
@@ -308,3 +322,8 @@ class Noodler(FilterWithDialog):
 		myCircle.closed = True
 		
 		return myCircle
+
+	@objc.python_method
+	def __file__(self):
+		"""Please leave this method unchanged"""
+		return __file__
