@@ -13,15 +13,15 @@
 	<key>CFBundleName</key>
 	<string>Noodler</string>
 	<key>CFBundleVersion</key>
-	<string>37</string>
+	<string>38</string>
 	<key>CFBundleShortVersionString</key>
-	<string>3.0.1</string>
+	<string>3.0.2</string>
 	<key>UpdateFeedURL</key>
 	<string>https://raw.githubusercontent.com/mekkablue/Noodler/master/Noodler.glyphsFilter/Contents/Info.plist</string>
 	<key>productPageURL</key>
 	<string>https://github.com/mekkablue/Noodler</string>
 	<key>productReleaseNotes</key>
-	<string>Updated plugin binary.</string>
+	<string>Fixed potential problem when you run Noodler for the first time in G3.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright, Rainer Erich Scheichelbauer, 2014-2018</string>
 	<key>NSPrincipalClass</key>

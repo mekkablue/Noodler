@@ -178,8 +178,8 @@ class Noodler(FilterWithDialog):
 		return "%s; %s; %i; %i" % (
 			self.__class__.__name__,
 			Glyphs.defaults['com.mekkablue.Noodler.noodleThickness'],
-			Glyphs.defaults['com.mekkablue.Noodler.extremesAndInflections'],
-			Glyphs.defaults['com.mekkablue.Noodler.removeOverlap'],
+			int(bool(Glyphs.defaults['com.mekkablue.Noodler.extremesAndInflections'])),
+			int(bool(Glyphs.defaults['com.mekkablue.Noodler.removeOverlap'])),
 			)
 
 	@objc.python_method
