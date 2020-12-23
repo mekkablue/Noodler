@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
@@ -12,16 +12,10 @@
 	<string>6.0</string>
 	<key>CFBundleName</key>
 	<string>Noodler</string>
+	<key>CFBundleShortVersionString</key>
+	<string>3.0.3</string>
 	<key>CFBundleVersion</key>
 	<string>39</string>
-	<key>CFBundleShortVersionString</key>
-	<string>3.0.2</string>
-	<key>UpdateFeedURL</key>
-	<string>https://raw.githubusercontent.com/mekkablue/Noodler/master/Noodler.glyphsFilter/Contents/Info.plist</string>
-	<key>productPageURL</key>
-	<string>https://github.com/mekkablue/Noodler</string>
-	<key>productReleaseNotes</key>
-	<string>Fixed potential problem when you run Noodler for the first time in G3.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright, Rainer Erich Scheichelbauer, 2014-2018</string>
 	<key>NSPrincipalClass</key>
@@ -30,5 +24,11 @@
 	<array>
 		<string>plugin.py</string>
 	</array>
+	<key>UpdateFeedURL</key>
+	<string>https://raw.githubusercontent.com/mekkablue/Noodler/master/Noodler.glyphsFilter/Contents/Info.plist</string>
+	<key>productPageURL</key>
+	<string>https://github.com/mekkablue/Noodler</string>
+	<key>productReleaseNotes</key>
+	<string>update binary files for Glyphs3</string>
 </dict>
 </plist>
