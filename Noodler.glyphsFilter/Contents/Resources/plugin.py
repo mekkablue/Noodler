@@ -248,7 +248,7 @@ class Noodler(FilterWithDialog):
 
 			# Remove overlaps:
 			if removeOverlap:
-				if Layer.bounds.origin.x + Layer.bounds.size.width > 8190.0:
+				if Glyphs.versionNumber < 3 and Layer.bounds.origin.x + Layer.bounds.size.width > 8190.0:
 					centerX = Layer.bounds.origin.x + Layer.bounds.size.width * 0.5
 					if centerX < 0.0:
 						print("Warning: glyph '%s' too wide for overlap removal!" % Layer.parent.name)
