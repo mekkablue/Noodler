@@ -285,7 +285,10 @@ class Noodler(FilterWithDialog):
 	def listOfFloats(self, commaSeparatedString):
 		floatList = []
 		for thisItem in str(commaSeparatedString).split(","):
-			floatList.append(float(thisItem.strip()))
+			thisItem = thisItem.strip()
+			if len(thisItem) == 0:
+				continue
+			floatList.append(float(thisItem))
 		return floatList
 
 	@objc.python_method
