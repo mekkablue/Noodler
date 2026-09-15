@@ -56,7 +56,7 @@ Afterwards, you can go to *File > Font Info > Instances* (Cmd-I), select an inst
 
 ### Requirements
 
-The plugin needs Glyphs 2.4 or higher. I assume it will not work in previous versions.
+The plugin needs Glyphs 2.4 or higher, and runs in Glyphs 3 and Glyphs 4. I assume it will not work in previous versions.
 
 ### License
 

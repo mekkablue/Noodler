@@ -24,11 +24,10 @@ from Cocoa import NSBezierPath, NSAffineTransform, NSAffineTransformStruct, NSCl
 MAGICNUMBER = 4.0 * (2.0**0.5 - 1.0) / 3.0
 
 
-@objc.python_method
 def offsetLayer(thisLayer, offset, makeStroke=False, position=0.5, autoStroke=False):
 	offsetFilter = NSClassFromString("GlyphsFilterOffsetCurve")
-	try:
-		# GLYPHS 3:
+	if Glyphs.versionNumber >= 3:
+		# GLYPHS 3 and 4:
 		offsetFilter.offsetLayer_offsetX_offsetY_makeStroke_autoStroke_position_metrics_error_shadow_capStyleStart_capStyleEnd_keepCompatibleOutlines_(
 			thisLayer,
 			offset, offset,  # horizontal and vertical offset
@@ -36,7 +35,7 @@ def offsetLayer(thisLayer, offset, makeStroke=False, position=0.5, autoStroke=Fa
 			autoStroke,      # if True, distorts resulting shape to vertical metrics
 			position,        # stroke distribution to the left and right, 0.5 = middle
 			None, None, None, 0, 0, False)
-	except:
+	else:
 		# GLYPHS 2:
 		offsetFilter.offsetLayer_offsetX_offsetY_makeStroke_autoStroke_position_error_shadow_(
 			thisLayer,
@@ -45,6 +44,40 @@ def offsetLayer(thisLayer, offset, makeStroke=False, position=0.5, autoStroke=Fa
 			autoStroke,      # if True, distorts resulting shape to vertical metrics
 			position,        # stroke distribution to the left and right, 0.5 = middle
 			None, None)
+
+
+def addExtremes(thisLayer):
+	"""
+	Adds nodes at the extremes of thisLayer.
+	addNodesAtExtremes() is the documented wrapper method in Glyphs 3 and 4,
+	addExtremePoints() only ever was an undocumented ObjC method.
+	"""
+	if hasattr(thisLayer, "addNodesAtExtremes"):
+		thisLayer.addNodesAtExtremes()
+	else:
+		thisLayer.addExtremePoints()
+
+
+def addInflections(thisLayer):
+	"""
+	Adds nodes at the inflection points of thisLayer.
+	There is no documented API for this, so we use the ObjC method where it
+	exists, and insert the nodes through the path segments where it does not.
+	"""
+	if thisLayer.respondsToSelector_("addInflectionPoints"):
+		thisLayer.addInflectionPoints()
+		return
+
+	for thisPath in thisLayer.paths:
+		pathTimes = []
+		for segmentIndex, thisSegment in enumerate(thisPath.segments):
+			for inflectionTime in thisSegment.inflectionPoints() or ():
+				# skip inflections that coincide with the segment’s end nodes:
+				if 0.001 < inflectionTime < 0.999:
+					pathTimes.append(segmentIndex + float(inflectionTime))
+		# insert from the back, so the remaining path times stay valid:
+		for pathTime in sorted(pathTimes, reverse=True):
+			thisPath.insertNodeWithPathTime_(pathTime)
 
 
 class Noodler(FilterWithDialog):
@@ -138,8 +171,8 @@ class Noodler(FilterWithDialog):
 			# Virtual layer for checking whether a circle should be added:
 			thinnestLayer = Layer.copy()
 			smallestRadius = min(noodleThicknesses) * 0.5
-			thinnestLayer.addExtremePoints()
-			thinnestLayer.addInflectionPoints()
+			addExtremes(thinnestLayer)
+			addInflections(thinnestLayer)
 			self.expandMonoline(thinnestLayer, smallestRadius)
 			thisLayerBezierPath = self.bezierPathComp(thinnestLayer)
 
@@ -151,24 +184,25 @@ class Noodler(FilterWithDialog):
 					collectionOfNoodledLayers.append(thisLayer)
 
 			# clean out Layer:
-			try:
-				# GLYPHS 3
+			if Glyphs.versionNumber >= 3:
+				# GLYPHS 3 and 4
 				for shapeIndex in reversed(range(len(Layer.shapes))):
 					thisShape = Layer.shapes[shapeIndex]
 					if isinstance(thisShape, GSPath):
 						Layer.removeShape_(thisShape)
-			except:
+			else:
 				# GLYPHS 2
 				for pathIndex in reversed(range(len(Layer.paths))):
 					Layer.removePathAtIndex_(pathIndex)
 
 			# add all noodles to the path:
 			for noodledLayer in collectionOfNoodledLayers:
-				for noodledPath in noodledLayer.paths:
-					try:
-						# GLYPHS 3:
+				# list() because adding the path reparents it away from noodledLayer:
+				for noodledPath in list(noodledLayer.paths):
+					if Glyphs.versionNumber >= 3:
+						# GLYPHS 3 and 4:
 						Layer.addShape_(noodledPath)
-					except:
+					else:
 						# GLYPHS 2:
 						Layer.addPath_(noodledPath)
 
@@ -198,7 +232,8 @@ class Noodler(FilterWithDialog):
 		try:
 			offsetLayer(Layer, noodleRadius, makeStroke=True)
 		except Exception as e:
-			print(e)
+			glyphName = Layer.parent.name if Layer.parent else "(unknown glyph)"
+			print("Noodler: could not expand monoline in %s: %s" % (glyphName, e))
 			import traceback
 			print(traceback.format_exc())
 
@@ -228,8 +263,8 @@ class Noodler(FilterWithDialog):
 
 			# Add extremes and inflections:
 			if extremesAndInflections:
-				Layer.addExtremePoints()
-				Layer.addInflectionPoints()
+				addExtremes(Layer)
+				addInflections(Layer)
 
 			# Expand monoline:
 			self.expandMonoline(Layer, noodleRadius)
@@ -239,10 +274,10 @@ class Noodler(FilterWithDialog):
 				circleCenter = thisNodePair[0]
 				if self.isARealEnd(circleCenter, noodleBezierPath):
 					circleAtThisPosition = self.drawCircle(circleCenter, noodleRadius)
-					try:
-						# GLYPHS 3:
+					if Glyphs.versionNumber >= 3:
+						# GLYPHS 3 and 4:
 						Layer.shapes.append(circleAtThisPosition)
-					except:
+					else:
 						# GLYPHS 2:
 						Layer.paths.append(circleAtThisPosition)
 
@@ -273,17 +308,24 @@ class Noodler(FilterWithDialog):
 	@objc.python_method
 	def bezierPathComp(self, thisLayer):
 		layerBezierPath = NSBezierPath.bezierPath()
-		layerBezierPath.appendBezierPath_(thisLayer.bezierPath)  # v2.3+
+		# .bezierPath is None for layers without paths, e.g. space:
+		thisBezierPath = thisLayer.bezierPath  # v2.3+
+		if thisBezierPath:
+			layerBezierPath.appendBezierPath_(thisBezierPath)
 		for thisComponent in thisLayer.components:
-			try:
-				layerBezierPath.appendBezierPath_(thisComponent.bezierPath)
-			except:
-				layerBezierPath.appendBezierPath_(thisComponent.bezierPath())
+			componentBezierPath = thisComponent.bezierPath
+			if callable(componentBezierPath):
+				# Glyphs 2.2 and earlier:
+				componentBezierPath = componentBezierPath()
+			if componentBezierPath:
+				layerBezierPath.appendBezierPath_(componentBezierPath)
 		return layerBezierPath
 
 	@objc.python_method
 	def listOfFloats(self, commaSeparatedString):
 		floatList = []
+		if not commaSeparatedString:
+			return floatList
 		for thisItem in str(commaSeparatedString).split(","):
 			thisItem = thisItem.strip()
 			if len(thisItem) == 0:
